@@ -5,7 +5,7 @@ Utilities and skill files for generating Moki Grand Arena lineup recommendations
 ## What this repo contains
 
 - `moki-lineup-generator/SKILL.md`: Skill definition for lineup generation.
-- `moki-lineup-generator/scripts/generate_lineup.py`: Scores champions from `game.csv`, picks the top 4 by score, and pairs them with a random scheme card from `schemes.json`.
+- `moki-lineup-generator/scripts/generate_lineup.py`: Builds best lineups per scheme card (including trait-based and stat-based scheme bonuses) and writes results to `moki_lineups.md`.
 - `champions.json`: Champion roster and traits.
 - `game.csv`: Performance metrics used for scoring.
 - `schemes.json`: Available scheme cards.
@@ -25,31 +25,34 @@ python -m pip install requests
 
 ## Generate a lineup
 
-Run from the script directory (important for relative file paths):
+Run from the project root:
 
 ```bash
-cd moki-lineup-generator/scripts
-python generate_lineup.py
+python moki-lineup-generator/scripts/generate_lineup.py
 ```
 
 The script reads:
 
-- `../../champions.json`
-- `../../game.csv`
-- `../../schemes.json`
+- `champions.json`
+- `game.csv`
+- `schemes.json`
 
 What it does:
 
-- Computes a per-champion score from `winrate`, `avg elims`, `avg balls`, and `avg wart`.
-- Sorts all champions by computed score (descending).
-- Selects the top 4 champions.
-- Selects 1 random scheme card.
-- Prints the lineup to stdout.
+- Computes base champion score from `winrate`, `avg elims`, `avg balls`, and `avg wart`.
+- Applies additional scheme-specific stat bonuses for supported non-trait schemes:
+  `Aggressive Specialization`, `Collective Specialization`, `Victory Lap`, `Taking a Dive`, `Gacha Gouging`, `Cage Match`.
+- Applies trait-based optimization and bonuses (`+25` per matching champion, based on lineup composition) for supported trait schemes, including:
+  `Shapeshifting` (matches `Tongue out`, `Tanuki mask`, `Kitsune Mask`, `Cat Mask`) and other trait schemes like `Divine Intervention`, `Midnight Strike`, `Malicious Intent`, etc.
+- Selects the best 4-champion lineup for each supported scheme.
+- Marks unsupported schemes in the output.
+- Sorts all scheme lineups by total lineup score.
+- Writes full report to `moki_lineups.md`.
 
 Important notes:
 
-- `champions.json` is currently loaded only for existence checking and is not used in the scoring logic.
-- Output is currently console-only; this script does not write `moki_lineups.md`.
+- Champion traits in `champions.json` are used by trait-based schemes.
+- The script prints `Successfully created moki_lineups.md` when generation succeeds.
 
 ## Refresh champion trait data (optional)
 

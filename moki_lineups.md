@@ -60,6 +60,21 @@
 
 ---
 
+## Best lineup for scheme: Shapeshifting
+**Description:** 25 points for EACH Tongue Out trait or Tanuki, Kitsune, or Cat Mask trait in lineup
+
+**Champions:**
+
+1. **Peeltergeist** (Score: 421.78 + Bonus 100.00)
+1. **UlquiorrA** (Score: 420.27 + Bonus 100.00)
+1. **APPLE** (Score: 404.80 + Bonus 100.00)
+1. **THANK U 4 PLAYIN** (Score: 388.33 + Bonus 100.00)
+
+**Total Scheme Bonus for Lineup:** 400.00
+**Total Lineup Score:** 2035.19
+
+---
+
 ## Best lineup for scheme: Victory Lap
 **Description:** 100 points when on the winning team
 
@@ -267,20 +282,6 @@
 
 **Total Scheme Bonus for Lineup:** 400.00
 **Total Lineup Score:** 1803.82
-
----
-
-## Best lineup for scheme: Shapeshifting
-**Description:** 25 points for EACH Tongue Out trait or Tanuki, Kitsune, or Cat Mask trait in lineup
-
-**Champions:**
-
-1. **Maomao** (Score: 444.29)
-1. **soda** (Score: 442.38)
-1. **Migatte Seishin** (Score: 427.58)
-1. **BIN Diesel** (Score: 427.08)
-
-**Total Lineup Score:** 1741.33
 
 ---
 
