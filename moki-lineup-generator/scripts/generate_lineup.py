@@ -151,7 +151,7 @@ def generate_lineup():
         "Rainbow Riot": {"contains": ["Rainbow"]},
         "Whale Watching": {"contains": ["1 of 1"]},
         "Call to Arms": {"contains": ["Ronin", "Samurai"]},
-        "Malicious Intent": {"contains": ["Devious Mouth", "Oni", "Tengu", "Skull Mask"]}
+        "Malicious Intent": {"contains": ["Devious", "Oni", "Tengu", "Skull Mask"]}
     }
 
     trait_based_schemes = [

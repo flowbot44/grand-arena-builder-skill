@@ -225,6 +225,21 @@
 
 ---
 
+## Best lineup for scheme: Malicious Intent
+**Description:** 25 points for EACH Devious Mouth trait or Oni, Tengu, or Skull Mask trait in lineup
+
+**Champions:**
+
+1. **Goldilocks** (Score: 405.33 + Bonus 100.00)
+1. **Midnight** (Score: 391.69 + Bonus 100.00)
+1. **Milo Thatch** (Score: 381.50 + Bonus 100.00)
+1. **Red Whine** (Score: 359.58 + Bonus 100.00)
+
+**Total Scheme Bonus for Lineup:** 400.00
+**Total Lineup Score:** 1938.11
+
+---
+
 ## Best lineup for scheme: Cage Match
 **Description:** 35 points Per Moki Elimination, +10 points per Gacha Ball delivered
 
@@ -237,21 +252,6 @@
 
 **Total Scheme Bonus for Lineup:** 256.45
 **Total Lineup Score:** 1929.95
-
----
-
-## Best lineup for scheme: Malicious Intent
-**Description:** 25 points for EACH Devious Mouth trait or Oni, Tengu, or Skull Mask trait in lineup
-
-**Champions:**
-
-1. **Goldilocks** (Score: 405.33 + Bonus 100.00)
-1. **Midnight** (Score: 391.69 + Bonus 100.00)
-1. **Red Whine** (Score: 359.58 + Bonus 100.00)
-1. **Uni** (Score: 324.01 + Bonus 100.00)
-
-**Total Scheme Bonus for Lineup:** 400.00
-**Total Lineup Score:** 1880.61
 
 ---
 
