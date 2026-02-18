@@ -1,0 +1,142 @@
+[
+  {
+    "name": "Flexing",
+    "description": "3 points for every second spent while buff"
+  },
+  {
+    "name": "Aggressive Specialization",
+    "description": "Eliminations get 1.5x points. No points for delivering Gacha Balls and Wart riding."
+  },
+  {
+    "name": "Taking a Dive",
+    "description": "150 points when on the losing team"
+  },
+  {
+    "name": "Collective Specialization",
+    "description": "Delivering Gacha Balls gets 1.4x points. No points for Eliminations and Wart riding."
+  },
+  {
+    "name": "Litter Collection",
+    "description": "50 points for picking up a loose Gacha Ball"
+  },
+  {
+    "name": "Touching the Wart",
+    "description": "If Wart is closer to your team's trap than the opponent's, +100 points"
+  },
+  {
+    "name": "Victory Lap",
+    "description": "100 points when on the winning team"
+  },
+  {
+    "name": "Baiting the Trap",
+    "description": "150 points when team wins by riding Wart into the trap"
+  },
+  {
+    "name": "Moki Smash",
+    "description": "150 points when team wins by Eliminations"
+  },
+  {
+    "name": "Grabbing Balls",
+    "description": "150 points when team wins by Gacha Ball deliveries"
+  },
+  {
+    "name": "Cursed Dinner",
+    "description": "50 points every time you eat a Moki while riding Wart"
+  },
+  {
+    "name": "Wart Rodeo",
+    "description": "3 points for every second spent riding wart"
+  },
+  {
+    "name": "Gacha Hoarding",
+    "description": "Double total points with 6+ base Gacha deliveries. 0 total points with fewer than 6."
+  },
+  {
+    "name": "Saccing",
+    "description": "75 points for being eaten by Wart"
+  },
+  {
+    "name": "Collect 'Em All",
+    "description": "35 points per EACH unique card rarity in lineup"
+  },
+  {
+    "name": "Beat the Buzzer",
+    "description": "200 points when winning Gacha Ball delivered to base"
+  },
+  {
+    "name": "Final Blow",
+    "description": "200 points when achieving winning elimination"
+  },
+  {
+    "name": "Enforcing the Naughty List",
+    "description": "Double total points with 5+ eliminations. 0 total points with fewer than 5."
+  },
+  {
+    "name": "Big Game Hunt",
+    "description": "200 points for riding Wart into the trap"
+  },
+  {
+    "name": "Costume Party",
+    "description": "25 points for EACH Onesie or Lemon, Kappa, Tomato, Bear, Frog, or Blob Head in lineup"
+  },
+  {
+    "name": "Shapeshifting",
+    "description": "25 points for EACH Tongue Out trait or Tanuki, Kitsune, or Cat Mask trait in lineup"
+  },
+  {
+    "name": "Midnight Strike",
+    "description": "25 on points for EACH Shadow Fur trait in lineup"
+  },
+  {
+    "name": "Dress to Impress",
+    "description": "25 points for EACH of any Kimono trait in lineup"
+  },
+  {
+    "name": "Housekeeping",
+    "description": "25 points for EACH Apron, Garbage/Gold Can, or Toilet Paper trait in lineup"
+  },
+  {
+    "name": "Dungaree Duel",
+    "description": "25 points for EACH Pink, Blue, or Green Overalls trait in lineup"
+  },
+  {
+    "name": "Tear Jerking",
+    "description": "25 points for EACH Crying Eye trait in lineup"
+  },
+  {
+    "name": "Golden Shower",
+    "description": "25 points for EACH Gold Fur trait in lineup"
+  },
+  {
+    "name": "Rainbow Riot",
+    "description": "25 points for EACH Rainbow Fur trait in lineup"
+  },
+  {
+    "name": "Divine Intervention",
+    "description": "25 points for EACH Spirit Fur trait in lineup"
+  },
+  {
+    "name": "Whale Watching",
+    "description": "25 points for EACH 1 of 1 Moki in lineup"
+  },
+  {
+    "name": "Call to Arms",
+    "description": "25 points for EACH Ronin or Samurai trait in lineup"
+  },
+  {
+    "name": "Malicious Intent",
+    "description": "25 points for EACH Devious Mouth trait or Oni, Tengu, or Skull Mask trait in lineup"
+  },
+  {
+    "name": "Running Interference",
+    "description": "50 points for being eliminated"
+  },
+  {
+    "name": "Gacha Gouging",
+    "description": "15 points per Gacha Ball delivered, and +20 per Elimination"
+  },
+  {
+    "name": "Cage Match",
+    "description": "35 points Per Moki Elimination, +10 points per Gacha Ball delivered"
+  }
+]
