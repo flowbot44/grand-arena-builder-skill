@@ -147,7 +147,7 @@ def generate_lineup():
         "Housekeeping": {"contains": ["Apron", "Garbage Can", "Toilet Paper"]},
         "Dungaree Duel": {"contains": ["Overalls"]},
         "Tear Jerking": {"contains": ["Crying"]},
-        "Golden Shower": {"contains": ["Gold"]},
+        "Golden Shower": ["Gold"],
         "Rainbow Riot": {"contains": ["Rainbow"]},
         "Whale Watching": {"contains": ["1 of 1"]},
         "Call to Arms": {"contains": ["Ronin", "Samurai"]},

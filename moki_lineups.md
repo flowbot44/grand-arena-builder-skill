@@ -30,21 +30,6 @@
 
 ---
 
-## Best lineup for scheme: Golden Shower
-**Description:** 25 points for EACH Gold Fur trait in lineup
-
-**Champions:**
-
-1. **Shado** (Score: 423.49 + Bonus 100.00)
-1. **UlquiorrA** (Score: 420.27 + Bonus 100.00)
-1. **Goldilocks** (Score: 405.33 + Bonus 100.00)
-1. **MINOZ** (Score: 392.57 + Bonus 100.00)
-
-**Total Scheme Bonus for Lineup:** 400.00
-**Total Lineup Score:** 2041.66
-
----
-
 ## Best lineup for scheme: Midnight Strike
 **Description:** 25 on points for EACH Shadow Fur trait in lineup
 
@@ -252,6 +237,21 @@
 
 **Total Scheme Bonus for Lineup:** 256.45
 **Total Lineup Score:** 1929.95
+
+---
+
+## Best lineup for scheme: Golden Shower
+**Description:** 25 points for EACH Gold Fur trait in lineup
+
+**Champions:**
+
+1. **Goldilocks** (Score: 405.33 + Bonus 100.00)
+1. **Amber** (Score: 377.64 + Bonus 100.00)
+1. **67** (Score: 371.57 + Bonus 100.00)
+1. **24K** (Score: 369.20 + Bonus 100.00)
+
+**Total Scheme Bonus for Lineup:** 400.00
+**Total Lineup Score:** 1923.75
 
 ---
 
