@@ -184,15 +184,32 @@ This mode skips `/api/v1/matches` pagination and only calls:
 python -m app.serve --host 127.0.0.1 --port 5000
 ```
 
+### Website features (current)
+
+- Terminal-style UI (black background, neon green text).
+- Champions index: ranked list with quick links.
+- Champion detail tabs:
+  - `history`: scored match history + totals + calculated points.
+  - `lookahead`: next matches, support metrics, opponent info, edge label/score.
+  - `match-info`: per-match result/win type + class breakdown by group.
+- Non-champions index with pagination (default `100` per page, up to `500`).
+- Non-champion detail tabs:
+  - `history`
+  - `lookahead`
+
 Key routes:
 
 - `GET /`
-- `GET /champions/<token_id>`
+- `GET /champions/<token_id>?tab=history`
+- `GET /champions/<token_id>?tab=lookahead`
+- `GET /champions/<token_id>?tab=match-info`
 - `GET /non-champions?page=1&per_page=100`
 - `GET /non-champions/<token_id>?tab=history`
 - `GET /non-champions/<token_id>?tab=lookahead`
 - `GET /api/champions`
+- `GET /api/champions/<token_id>/history`
 - `GET /api/champions/<token_id>/next-matches?limit=10`
+- `GET /api/champions/<token_id>/match-info`
 - `GET /api/non-champions?page=1&per_page=100`
 - `GET /api/non-champions/<token_id>/history`
 - `GET /api/non-champions/<token_id>/next-matches?limit=10`
@@ -204,3 +221,26 @@ Response metadata includes:
 - `window_start`
 - `window_end`
 - `insufficient_upcoming` (for sparse upcoming schedules)
+
+### What is stored in the SQLite database
+
+Database file:
+
+- default: `grandarena.db`
+- override: `GRANDARENA_DB_PATH`
+
+Tables:
+
+- `champions`: champion roster from `champions.json` (`token_id`, `name`, `traits_json`, `updated_at`).
+- `matches`: match-level metadata and state (`match_id`, `match_date`, `state`, `team_won`, `win_type`, timestamps).
+- `match_players`: players per match (`token_id`, `moki_id`, `team`, `class`, `is_champion`).
+- `match_stats_players`: per-match stats payload rows (`points`, `deposits`, `eliminations`, `wart_distance`, `won`).
+- `performances`: per-performance rows from `/matches/{id}/performances`.
+- `ingestion_runs`: run history and run details JSON.
+- `api_cursors`: per-date watermarks/cursors used by ingest.
+- `champion_metrics`: recomputed champion summary metrics for website queries.
+
+Notes:
+
+- `CHAMPION_ONLY_MATCHES=true` keeps storage focused on matches that include at least one champion.
+- Calculated points shown on pages use custom scoring logic in app analytics, not raw API points.
