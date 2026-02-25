@@ -184,6 +184,46 @@ This mode skips `/api/v1/matches` pagination and only calls:
 python -m app.serve --host 127.0.0.1 --port 5000
 ```
 
+### Predict day-ahead match winners
+
+Use class-matchup and team-composition priors from scored matches to predict scheduled matches.
+
+```bash
+python -m app.predict_day_ahead --date "$(date -v+1d +%F)"
+```
+
+Optional JSON export:
+
+```bash
+python -m app.predict_day_ahead --date 2026-02-25 --days 1 --json-out predictions_2026-02-25.json
+```
+
+High-confidence shortlist:
+
+```bash
+python -m app.predict_day_ahead --date 2026-02-25 --min-confidence 0.60 --limit 50
+```
+
+Include champion names in each line (default) and print how many champion names have more than 3 favorable matchups:
+
+```bash
+python -m app.predict_day_ahead --date 2026-02-25 --favorable-threshold 0.50
+```
+
+Summary-only output (uses champion names, not IDs):
+
+```bash
+python -m app.predict_day_ahead --date 2026-02-25 --summary-only --favorable-threshold 0.50
+```
+
+Contest window mode (example: starts 08:00 UTC, evaluate next 5 matches):
+
+```bash
+python -m app.predict_day_ahead --date 2026-02-25 --start-time-utc 08:00 --num-matches 5 --summary-only
+```
+
+Note: the current DB stores `match_date` as date-only (no exact scheduled start timestamp), so `--start-time-utc` is mapped proportionally across the day’s match order.
+
 ### Website features (current)
 
 - Terminal-style UI (black background, neon green text).
