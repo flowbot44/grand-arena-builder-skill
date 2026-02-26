@@ -2,7 +2,7 @@ name: Publish Data Feed
 
 on:
   schedule:
-    - cron: "7 * * * *"
+    - cron: '0 */2 * * *'
   workflow_dispatch:
 
 permissions:
@@ -22,7 +22,9 @@ jobs:
       GRANDARENA_API_KEY: ${{ secrets.GRANDARENA_API_KEY }}
       SEED_DB_URL: ${{ secrets.SEED_DB_URL }}
       GRANDARENA_DB_PATH: state/grandarena.db
-      FETCH_MATCH_PERFORMANCES: "false"
+      FETCH_MATCH_PERFORMANCES: "true"
+      LOOKBEHIND_DAYS: "1"
+      LOOKAHEAD_DAYS: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
