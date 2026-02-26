@@ -20,7 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GRANDARENA_API_KEY: ${{ secrets.GRANDARENA_API_KEY }}
+      SEED_DB_URL: ${{ secrets.SEED_DB_URL }}
       GRANDARENA_DB_PATH: state/grandarena.db
+      FETCH_MATCH_PERFORMANCES: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,10 +55,22 @@ jobs:
             gunzip -f state/grandarena.db.gz
           fi
 
+      - name: Seed DB If Missing
+        run: |
+          if [ ! -f state/grandarena.db ] && [ -n "${SEED_DB_URL:-}" ]; then
+            echo "No prior artifact found. Seeding from SEED_DB_URL..."
+            curl -fL "$SEED_DB_URL" -o state/seed.db.download
+            if gzip -t state/seed.db.download 2>/dev/null; then
+              gunzip -c state/seed.db.download > state/grandarena.db
+            else
+              mv state/seed.db.download state/grandarena.db
+            fi
+          fi
+
       - name: Bootstrap DB If Missing
         run: |
           if [ ! -f state/grandarena.db ]; then
-            FROM_DATE="$(date -u -d '6 days ago' +%F)"
+            FROM_DATE="$(date -u -d '2 days ago' +%F)"
             TO_DATE="$(date -u +%F)"
             python -m app.ingest backfill --db state/grandarena.db --from "$FROM_DATE" --to "$TO_DATE"
           fi
