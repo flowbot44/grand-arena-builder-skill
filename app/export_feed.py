@@ -210,9 +210,18 @@ def _scored_rows_for_window(conn: sqlite3.Connection, start_date: str, end_date:
     ).fetchall()
 
 
-def export_feed(conn: sqlite3.Connection, *, out_dir: Path, days: int, today: date) -> Dict[str, Any]:
+def export_feed(
+    conn: sqlite3.Connection,
+    *,
+    out_dir: Path,
+    days: int,
+    today: date,
+    lookahead_days: int = 0,
+) -> Dict[str, Any]:
     start = window_start(today, days)
-    calendar_dates = [d.isoformat() for d in date_range(start, today)]
+    raw_end = today + timedelta(days=max(0, int(lookahead_days)))
+    raw_calendar_dates = [d.isoformat() for d in date_range(start, raw_end)]
+    cumulative_calendar_dates = [d.isoformat() for d in date_range(start, today)]
 
     out_dir.mkdir(parents=True, exist_ok=True)
     partitions_dir = out_dir / "partitions"
@@ -221,7 +230,7 @@ def export_feed(conn: sqlite3.Connection, *, out_dir: Path, days: int, today: da
     cumulative_dir.mkdir(parents=True, exist_ok=True)
 
     partition_entries: List[Dict[str, Any]] = []
-    for day_iso in calendar_dates:
+    for day_iso in raw_calendar_dates:
         match_rows = _match_rows_for_date(conn, day_iso)
         payload_matches: List[Dict[str, Any]] = []
         for row in match_rows:
@@ -251,7 +260,8 @@ def export_feed(conn: sqlite3.Connection, *, out_dir: Path, days: int, today: da
     raw_manifest = {
         "generated_at_utc": utc_now_iso(),
         "window_days": days,
-        "available_dates": calendar_dates,
+        "lookahead_days": max(0, int(lookahead_days)),
+        "available_dates": raw_calendar_dates,
         "partitions": partition_entries,
     }
     _write_json(out_dir / "latest.json", raw_manifest)
@@ -264,7 +274,7 @@ def export_feed(conn: sqlite3.Connection, *, out_dir: Path, days: int, today: da
     cumulative_entries: List[Dict[str, Any]] = []
     running: Dict[int, CumulativeTotals] = {}
     current_rows: List[Dict[str, Any]] = []
-    for day_iso in calendar_dates:
+    for day_iso in cumulative_calendar_dates:
         for row in by_date.get(day_iso, []):
             token_id = int(row["token_id"])
             moki_id = row["moki_id"]
@@ -307,7 +317,7 @@ def export_feed(conn: sqlite3.Connection, *, out_dir: Path, days: int, today: da
     cumulative_manifest = {
         "generated_at_utc": utc_now_iso(),
         "window_days": days,
-        "available_dates": calendar_dates,
+        "available_dates": cumulative_calendar_dates,
         "files": cumulative_entries,
         "current_totals": {
             "url": "cumulative/current_totals.json.gz",
@@ -329,16 +339,18 @@ def export_feed(conn: sqlite3.Connection, *, out_dir: Path, days: int, today: da
     status_payload = {
         "generated_at_utc": utc_now_iso(),
         "window_days": days,
+        "lookahead_days": max(0, int(lookahead_days)),
         "window_start": start.isoformat(),
-        "window_end": today.isoformat(),
-        "raw_dates": calendar_dates,
+        "window_end": raw_end.isoformat(),
+        "cumulative_window_end": today.isoformat(),
+        "raw_dates": raw_calendar_dates,
         "latest_ingestion_run": dict(latest_run) if latest_run else None,
     }
     _write_json(out_dir / "status.json", status_payload)
 
     return {
         "window_start": start.isoformat(),
-        "window_end": today.isoformat(),
+        "window_end": raw_end.isoformat(),
         "raw_partitions": len(partition_entries),
         "cumulative_files": len(cumulative_entries),
         "current_player_count": len(current_rows),
@@ -351,6 +363,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--db", default=SETTINGS.db_path, help="SQLite DB path")
     parser.add_argument("--out", default="exports/data", help="Output directory (e.g. exports/data)")
     parser.add_argument("--days", type=int, default=7, help="Rolling window day count")
+    parser.add_argument("--lookahead-days", type=int, default=0, help="Additional future days for raw partition export")
     parser.add_argument("--today", default=date.today().isoformat(), help="UTC date override YYYY-MM-DD")
     return parser.parse_args()
 
@@ -364,6 +377,7 @@ def main() -> int:
         out_dir=Path(args.out),
         days=max(1, int(args.days)),
         today=date.fromisoformat(args.today),
+        lookahead_days=max(0, int(args.lookahead_days)),
     )
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0

@@ -82,7 +82,7 @@ jobs:
         run: python -m app.maintenance prune --db state/grandarena.db --keep-days 7
 
       - name: Export Static Feed
-        run: python -m app.export_feed --db state/grandarena.db --out exports/data --days 7
+        run: python -m app.export_feed --db state/grandarena.db --out exports/data --days 7 --lookahead-days 2
 
       - name: Pack DB State
         run: gzip -f state/grandarena.db
