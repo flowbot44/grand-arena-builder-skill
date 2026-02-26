@@ -1,0 +1,93 @@
+name: Publish Data Feed
+
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: publish-feed-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GRANDARENA_API_KEY: ${{ secrets.GRANDARENA_API_KEY }}
+      GRANDARENA_DB_PATH: state/grandarena.db
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Create Work Dirs
+        run: mkdir -p state exports
+
+      - name: Restore Prior DB Artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: publish-feed.yml
+          workflow_conclusion: success
+          name: grandarena-db-state
+          path: state
+          if_no_artifact_found: warn
+
+      - name: Unpack DB State
+        run: |
+          if [ -f state/grandarena.db.gz ]; then
+            gunzip -f state/grandarena.db.gz
+          fi
+
+      - name: Bootstrap DB If Missing
+        run: |
+          if [ ! -f state/grandarena.db ]; then
+            FROM_DATE="$(date -u -d '6 days ago' +%F)"
+            TO_DATE="$(date -u +%F)"
+            python -m app.ingest backfill --db state/grandarena.db --from "$FROM_DATE" --to "$TO_DATE"
+          fi
+
+      - name: Hourly Ingest
+        run: python -m app.ingest hourly --db state/grandarena.db
+
+      - name: Prune Rolling Window
+        run: python -m app.maintenance prune --db state/grandarena.db --keep-days 7
+
+      - name: Export Static Feed
+        run: python -m app.export_feed --db state/grandarena.db --out exports/data --days 7
+
+      - name: Pack DB State
+        run: gzip -f state/grandarena.db
+
+      - name: Upload DB State Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: grandarena-db-state
+          path: state/grandarena.db.gz
+          retention-days: 90
+          overwrite: true
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: exports
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
