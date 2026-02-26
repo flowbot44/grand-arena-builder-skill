@@ -1,0 +1,70 @@
+{
+  "available_dates": [
+    "2026-02-20",
+    "2026-02-21",
+    "2026-02-22",
+    "2026-02-23",
+    "2026-02-24",
+    "2026-02-25",
+    "2026-02-26"
+  ],
+  "current_totals": {
+    "bytes": 153277,
+    "player_count": 8446,
+    "sha256": "5db701553f9cd01fc6158d1950719141952a8500568eb8a29b2a9517319eadee",
+    "url": "cumulative/current_totals.json.gz"
+  },
+  "files": [
+    {
+      "bytes": 113631,
+      "date": "2026-02-20",
+      "player_count": 8446,
+      "sha256": "7f8459974cc3fb01d650b4a816dc477d24b7ca068d52b2d66d7b7b427160b4a8",
+      "url": "cumulative/daily_totals_2026-02-20.json.gz"
+    },
+    {
+      "bytes": 131711,
+      "date": "2026-02-21",
+      "player_count": 8446,
+      "sha256": "b29caae1a76306e858f658f8990a748d5991b76240cb416cdd71c57aefe38fb8",
+      "url": "cumulative/daily_totals_2026-02-21.json.gz"
+    },
+    {
+      "bytes": 140677,
+      "date": "2026-02-22",
+      "player_count": 8446,
+      "sha256": "c5e85125ddf4d59b35f55899f8761fb515392cb093587e1f9e2689d4b6067ba9",
+      "url": "cumulative/daily_totals_2026-02-22.json.gz"
+    },
+    {
+      "bytes": 145189,
+      "date": "2026-02-23",
+      "player_count": 8446,
+      "sha256": "572b050db0993dda89a57698498b7b6ef9e20867c8cb8d61ea1e4c0a145ac870",
+      "url": "cumulative/daily_totals_2026-02-23.json.gz"
+    },
+    {
+      "bytes": 149525,
+      "date": "2026-02-24",
+      "player_count": 8446,
+      "sha256": "069bf69d2044b1cadad4232e73ec34bd404d95b48aebbe813c447413f7ce8f3d",
+      "url": "cumulative/daily_totals_2026-02-24.json.gz"
+    },
+    {
+      "bytes": 153286,
+      "date": "2026-02-25",
+      "player_count": 8446,
+      "sha256": "90dbc257702d41f16d083a31b464c2ca9bf9dd3639b9d4e4353c143e6921f27a",
+      "url": "cumulative/daily_totals_2026-02-25.json.gz"
+    },
+    {
+      "bytes": 153286,
+      "date": "2026-02-26",
+      "player_count": 8446,
+      "sha256": "df248e9fe6d466d75e843908fe9ff26ffabe0b1580fd438db2dbad8f84c78a94",
+      "url": "cumulative/daily_totals_2026-02-26.json.gz"
+    }
+  ],
+  "generated_at_utc": "2026-02-26T18:27:36.318103+00:00",
+  "window_days": 7
+}

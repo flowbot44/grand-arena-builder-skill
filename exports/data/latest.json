@@ -1,0 +1,64 @@
+{
+  "available_dates": [
+    "2026-02-20",
+    "2026-02-21",
+    "2026-02-22",
+    "2026-02-23",
+    "2026-02-24",
+    "2026-02-25",
+    "2026-02-26"
+  ],
+  "generated_at_utc": "2026-02-26T18:27:33.251276+00:00",
+  "partitions": [
+    {
+      "bytes": 2037770,
+      "date": "2026-02-20",
+      "match_count": 4430,
+      "sha256": "468886bcc8cfe4074f179865a78ba40f19b766c19d856cc3becfa16f50e27a11",
+      "url": "partitions/raw_matches_2026-02-20.json.gz"
+    },
+    {
+      "bytes": 2144478,
+      "date": "2026-02-21",
+      "match_count": 4430,
+      "sha256": "e874cd648c81f58b10cc7ce1d2c79fa0fd4e508476e42358394b9801c9c615a0",
+      "url": "partitions/raw_matches_2026-02-21.json.gz"
+    },
+    {
+      "bytes": 2141938,
+      "date": "2026-02-22",
+      "match_count": 4430,
+      "sha256": "d25bb96f2e02786ee43c55f943564adc888ff5b2dca8cb2a3998400481edbe2f",
+      "url": "partitions/raw_matches_2026-02-22.json.gz"
+    },
+    {
+      "bytes": 1960189,
+      "date": "2026-02-23",
+      "match_count": 4430,
+      "sha256": "638fc122a76effb27354df163977f1e60a4aec7a571a20763f1f2a76a4d845d1",
+      "url": "partitions/raw_matches_2026-02-23.json.gz"
+    },
+    {
+      "bytes": 2037491,
+      "date": "2026-02-24",
+      "match_count": 4430,
+      "sha256": "85d42e468504836966420655b9c5ec5a31f374474fe263ff0aad9e6243f731b1",
+      "url": "partitions/raw_matches_2026-02-24.json.gz"
+    },
+    {
+      "bytes": 2146669,
+      "date": "2026-02-25",
+      "match_count": 4430,
+      "sha256": "ea10db713ee9dda02913eaa678ff82c3367561e2ebe5144ccf41e3bf5c5bf5f6",
+      "url": "partitions/raw_matches_2026-02-25.json.gz"
+    },
+    {
+      "bytes": 1459798,
+      "date": "2026-02-26",
+      "match_count": 4098,
+      "sha256": "76d99a65217d64b3c1c3e7d48240cdcadecbf2aacbd4cde914078acbf54bbaaa",
+      "url": "partitions/raw_matches_2026-02-26.json.gz"
+    }
+  ],
+  "window_days": 7
+}

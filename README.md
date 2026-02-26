@@ -117,6 +117,30 @@ The script:
 - Validates the 200 response shape against expected keys.
 - Writes full request/response attempts to `grandarena_leaderboards_response.json`.
 
+You can also query a single match (and related stats/performances), for example:
+
+```bash
+python explore_grandarena_api.py \
+  --path /api/v1/matches/{matchId} \
+  --path-match-id 6996ea499e2bde4f324cfae9 \
+  --out match_6996ea499e2bde4f324cfae9.json
+```
+
+```bash
+python explore_grandarena_api.py \
+  --path /api/v1/matches/{matchId}/stats \
+  --path-match-id 6996ea499e2bde4f324cfae9 \
+  --out match_6996ea499e2bde4f324cfae9_stats.json
+```
+
+```bash
+python explore_grandarena_api.py \
+  --path /api/v1/matches/{matchId}/performances \
+  --path-match-id 6996ea499e2bde4f324cfae9 \
+  --page 1 --limit 100 \
+  --out match_6996ea499e2bde4f324cfae9_performances.json
+```
+
 ## Grand Arena local ingest + matchup website (v1)
 
 This repo now includes a local data platform in `app/`:
@@ -284,3 +308,72 @@ Notes:
 
 - `CHAMPION_ONLY_MATCHES=true` keeps storage focused on matches that include at least one champion.
 - Calculated points shown on pages use custom scoring logic in app analytics, not raw API points.
+
+## Public GitHub feed for Vercel/FastAPI consumers
+
+This repo can publish a static JSON/GZIP feed to GitHub Pages so a Vercel-hosted app can read data without shipping `grandarena.db`.
+
+Expected public URLs (replace `<user>`/`<repo>`):
+
+- `https://<user>.github.io/<repo>/data/latest.json`
+- `https://<user>.github.io/<repo>/data/status.json`
+- `https://<user>.github.io/<repo>/data/partitions/raw_matches_YYYY-MM-DD.json.gz`
+- `https://<user>.github.io/<repo>/data/cumulative/latest.json`
+- `https://<user>.github.io/<repo>/data/cumulative/current_totals.json.gz`
+- `https://<user>.github.io/<repo>/data/cumulative/daily_totals_YYYY-MM-DD.json.gz`
+
+### Hourly publish flow
+
+Workflow file: `.github/workflows/publish-feed.yml`
+
+- Triggered hourly (`cron: "7 * * * *"`) and via manual dispatch.
+- Restores the last DB state artifact (`state/grandarena.db.gz`) when available.
+- Runs:
+  - `python -m app.ingest hourly --db state/grandarena.db`
+  - `python -m app.maintenance prune --db state/grandarena.db --keep-days 7`
+  - `python -m app.export_feed --db state/grandarena.db --out exports/data --days 7`
+- Publishes `exports/` to GitHub Pages.
+- Uploads updated `state/grandarena.db.gz` for the next run.
+
+Required secret:
+
+- `GRANDARENA_API_KEY`
+
+### 7-day rolling raw partitions
+
+`app.maintenance` keeps only a rolling 7-day window in DB by deleting match-linked rows older than the cutoff date:
+
+- `performances`
+- `match_stats_players`
+- `match_players`
+- `matches`
+
+Raw partition exports are generated per day:
+
+- `data/partitions/raw_matches_YYYY-MM-DD.json.gz`
+
+These files are designed for website/API consumers that need recent raw match/player/stats/performance data.
+
+### Cumulative daily totals dataset (tokenId keyed)
+
+`app.export_feed` also emits cumulative totals keyed by `token_id` (with `moki_id` metadata when available):
+
+- `games_played_cum`
+- `wins_cum`
+- `points_cum`
+- `eliminations_cum`
+- `deposits_cum`
+- `wart_distance_cum`
+- `as_of_date`
+
+Points formula:
+
+- `points = deposits*50 + eliminations*80 + floor(wart_distance/80)*45 + (won ? 300 : 0)`
+
+### Vercel integration expectation
+
+For a Vercel-hosted FastAPI/static frontend app:
+
+- Read from the GitHub Pages URLs over HTTPS.
+- Add short TTL caching (for example 5-15 minutes) in the backend adapter.
+- Keep existing frontend endpoint contracts stable while swapping the backend data source from local SQLite to feed files.

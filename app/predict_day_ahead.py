@@ -189,8 +189,11 @@ def load_scheduled_matches(conn, from_date: date, to_date: date) -> List[dict]:
                     "class": cls if cls else None,
                 }
 
-        teams = sorted(team_classes.keys())
+        teams = sorted({int(p["team"]) for p in players})
         if len(teams) != 2:
+            continue
+        if teams[0] not in team_champs or teams[1] not in team_champs:
+            # Always keep this predictor champion-only.
             continue
 
         snapshots: Dict[int, TeamSnapshot] = {}

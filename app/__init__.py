@@ -6,5 +6,7 @@ __all__ = [
     "db",
     "analytics",
     "ingest",
+    "maintenance",
+    "export_feed",
     "serve",
 ]

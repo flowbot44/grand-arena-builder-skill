@@ -1,0 +1,2837 @@
+[
+  {
+    "id": 2906,
+    "name": "soda",
+    "traits": [
+      "soda",
+      "Divine"
+    ]
+  },
+  {
+    "id": 7858,
+    "name": "Maomao",
+    "traits": [
+      "Pink",
+      "Wolf Onesie",
+      "Determined",
+      "Sparkles",
+      "Heavy Yellow",
+      "Yellow",
+      "Balloons",
+      "Common",
+      "White",
+      "Sad"
+    ]
+  },
+  {
+    "id": 8260,
+    "name": "BIN Diesel",
+    "traits": [
+      "Green",
+      "Garbage Can",
+      "Normal",
+      "Bored",
+      "Scar",
+      "Particles",
+      "Light Brown",
+      "Brown",
+      "Lucky",
+      "Green",
+      "Scared"
+    ]
+  },
+  {
+    "id": 6820,
+    "name": "Mononoku",
+    "traits": [
+      "Spirit Aqua",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Spirit",
+      "Spirit Flame",
+      "Divine",
+      "Spirit",
+      "Scared"
+    ]
+  },
+  {
+    "id": 8575,
+    "name": "Migatte Seishin",
+    "traits": [
+      "Spirit Blue",
+      "Straw Kimono",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Particles",
+      "Spirit",
+      "Divine",
+      "Spirit",
+      "Hmph"
+    ]
+  },
+  {
+    "id": 8887,
+    "name": "Shado",
+    "traits": [
+      "Shadow Blue",
+      "Ronin",
+      "Normal",
+      "Frown",
+      "Sad",
+      "Shadow",
+      "Gold Katana",
+      "Divine",
+      "Ronin",
+      "Shadow",
+      "Chubby"
+    ]
+  },
+  {
+    "id": 1521,
+    "name": "UlquiorrA",
+    "traits": [
+      "Spirit Aqua",
+      "Normal",
+      "Bored",
+      "Angry",
+      "Spirit",
+      "Calligraphy Brush",
+      "Divine",
+      "Gold Headband",
+      "Spirit",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 2575,
+    "name": "Peeltergeist",
+    "traits": [
+      "Spirit Blue",
+      "Mom Tattoo",
+      "Normal",
+      "Bored",
+      "Angry",
+      "Spirit",
+      "Bananagasm",
+      "Divine",
+      "White Chef Wrap",
+      "Spirit",
+      "Tongue out",
+      "Finger"
+    ]
+  },
+  {
+    "id": 4193,
+    "name": "MahoShojo",
+    "traits": [
+      "MahoShojo",
+      "Common"
+    ]
+  },
+  {
+    "id": 8086,
+    "name": "Maid of Shadows",
+    "traits": [
+      "Shadow Purple",
+      "Maid Apron",
+      "Normal",
+      "Crying",
+      "Watery",
+      "Sad",
+      "Shadow",
+      "Lucky",
+      "Maid Headband",
+      "Shadow",
+      "Sad"
+    ]
+  },
+  {
+    "id": 6414,
+    "name": "APPLE",
+    "traits": [
+      "Light Yellow",
+      "WF Glider Gear",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Particles",
+      "Rainbow",
+      "Rainbow",
+      "Divine",
+      "Rainbow",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 6100,
+    "name": "Sir Pochington",
+    "traits": [
+      "Light Blue",
+      "Blue Bowtie",
+      "Normal",
+      "Tired",
+      "Surprised",
+      "Bandaid",
+      "Rainbow",
+      "Rainbow",
+      "Taiyaki",
+      "Divine",
+      "Rainbow",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 4602,
+    "name": "Wizard Boi",
+    "traits": [
+      "Shadow Blue",
+      "Normal",
+      "Crying",
+      "Sparkles",
+      "Sus",
+      "Shadow",
+      "Divine",
+      "Witch Hat",
+      "Shadow",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 523,
+    "name": "Goldilocks",
+    "traits": [
+      "Blue",
+      "Yellow Bandana",
+      "Excited",
+      "Bored",
+      "Blush",
+      "Gold",
+      "Gold",
+      "Onigiri",
+      "Lucky",
+      "Blue Kanzashi",
+      "Gold",
+      "Open Smile"
+    ]
+  },
+  {
+    "id": 3672,
+    "name": "Yishu",
+    "traits": [
+      "Blue",
+      "Denim Vest",
+      "Tired",
+      "Bored",
+      "Heavy Grey",
+      "Grey",
+      "Purple Brush",
+      "Common",
+      "Pink",
+      "Disgust"
+    ]
+  },
+  {
+    "id": 8530,
+    "name": "Toast",
+    "traits": [
+      "Grey",
+      "Avocado Onesie",
+      "Sad",
+      "Bored",
+      "Surprised",
+      "Bandaid",
+      "Heavy Snow",
+      "Light Brown",
+      "Brown",
+      "Common",
+      "Red",
+      "Sad"
+    ]
+  },
+  {
+    "id": 7008,
+    "name": "Chef Maki",
+    "traits": [
+      "Spirit Blue",
+      "Normal",
+      "Frown",
+      "Sus",
+      "Spirit",
+      "Toilet Paper",
+      "Divine",
+      "White Chef Wrap",
+      "Spirit",
+      "Chubby"
+    ]
+  },
+  {
+    "id": 3186,
+    "name": "The Last Samurai",
+    "traits": [
+      "Shadow Blue",
+      "Normal",
+      "Frown",
+      "Angry",
+      "Shadow",
+      "Gold Katana",
+      "Divine",
+      "Shadow",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 5885,
+    "name": "Smiley",
+    "traits": [
+      "Light Grey",
+      "Samurai",
+      "Sad",
+      "Determined",
+      "Sparkles",
+      "Particles",
+      "Light Grey",
+      "Grey",
+      "Purple Brush",
+      "Lucky",
+      "Smiley Mask",
+      "Blue",
+      "Passive"
+    ]
+  },
+  {
+    "id": 6191,
+    "name": "Antithei",
+    "traits": [
+      "Shadow Blue",
+      "Rainbow Kimono",
+      "Normal",
+      "Bored",
+      "Sus",
+      "Spirits",
+      "Shadow",
+      "Divine",
+      "Shadow",
+      "Smile"
+    ]
+  },
+  {
+    "id": 3432,
+    "name": "Long Dinger",
+    "traits": [
+      "Teal Sparkles",
+      "Purple Hoodie",
+      "Normal",
+      "Round",
+      "Sparkles",
+      "Surprised",
+      "Heavy Yellow",
+      "Yellow",
+      "FL Bat",
+      "Common",
+      "Jiangshi",
+      "Green",
+      "Sad"
+    ]
+  },
+  {
+    "id": 1029,
+    "name": "Midnight",
+    "traits": [
+      "Light Grey",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Sakura",
+      "Light Yellow",
+      "Yellow",
+      "Banana Milk",
+      "Lucky",
+      "Tengu Mask",
+      "Purple",
+      "Chubby"
+    ]
+  },
+  {
+    "id": 1863,
+    "name": "Mr Teabag",
+    "traits": [
+      "Light Yellow",
+      "Samurai",
+      "Sad",
+      "Determined",
+      "Dot",
+      "Bubblegum Round Glasses",
+      "Light Grey",
+      "Grey",
+      "Blue Teacup",
+      "Lucky",
+      "Onyx",
+      "Scared"
+    ]
+  },
+  {
+    "id": 2660,
+    "name": "Samurai Boi",
+    "traits": [
+      "Light Pink",
+      "Straw Kimono",
+      "Tired",
+      "Determined",
+      "Dot",
+      "Blush",
+      "Light Dark",
+      "Dark",
+      "Common",
+      "Large Straw Hat",
+      "Green",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 1787,
+    "name": "KOHI",
+    "traits": [
+      "Light Grey",
+      "Normal",
+      "Bored",
+      "Surprised",
+      "Rainbow",
+      "Rainbow",
+      "Coffee",
+      "Lucky",
+      "White Chef Wrap",
+      "Rainbow",
+      "Passive"
+    ]
+  },
+  {
+    "id": 3563,
+    "name": "Cry Bunny",
+    "traits": [
+      "Spirit Aqua",
+      "Blue Bunny Bag",
+      "Normal",
+      "Crying",
+      "Watery",
+      "Bushy",
+      "Spirit",
+      "Common",
+      "Blue Chef Wrap",
+      "Spirit",
+      "Chubby",
+      "Finger"
+    ]
+  },
+  {
+    "id": 5534,
+    "name": "Mozy",
+    "traits": [
+      "Mozy",
+      "Lucky"
+    ]
+  },
+  {
+    "id": 8833,
+    "name": "MINOZ",
+    "traits": [
+      "Spirit Aqua",
+      "Gold Kimono",
+      "Normal",
+      "Round",
+      "Heart",
+      "Sad",
+      "Spirit",
+      "Gold Teacup",
+      "Divine",
+      "Spirit",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 984,
+    "name": "Mr Carrot",
+    "traits": [
+      "Light Green",
+      "Sad",
+      "Bored",
+      "Sad",
+      "Sunglasses",
+      "Light Brown",
+      "Brown",
+      "Carrot",
+      "Common",
+      "Green",
+      "Hmph"
+    ]
+  },
+  {
+    "id": 7181,
+    "name": "Gruyere",
+    "traits": [
+      "Gruyere",
+      "Divine"
+    ]
+  },
+  {
+    "id": 3836,
+    "name": "Amber",
+    "traits": [
+      "Teal",
+      "Casual Kimono",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Gold",
+      "Gold",
+      "Divine",
+      "Pink Kanzashi",
+      "Gold",
+      "Open Smile"
+    ]
+  },
+  {
+    "id": 5755,
+    "name": "Keanu",
+    "traits": [
+      "Spirit Blue",
+      "Straw Kimono",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Spirit",
+      "Divine",
+      "Large Straw Hat",
+      "Spirit",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 4816,
+    "name": "Vagabond",
+    "traits": [
+      "Vagabond",
+      "Divine"
+    ]
+  },
+  {
+    "id": 3185,
+    "name": "Lucid",
+    "traits": [
+      "Dark Blue",
+      "Normal",
+      "Tired",
+      "Heart",
+      "Particles",
+      "Rainbow",
+      "Rainbow",
+      "Black Controller",
+      "Lucky",
+      "Gold Headband",
+      "Rainbow",
+      "Smile"
+    ]
+  },
+  {
+    "id": 5809,
+    "name": "The Champ MoTZ",
+    "traits": [
+      "Light Grey",
+      "School Uniform",
+      "Excited",
+      "Bored",
+      "Angry",
+      "Heavy Brown",
+      "Brown",
+      "Doodle Book",
+      "Lucky",
+      "Green",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 5078,
+    "name": "CAPOEIRA",
+    "traits": [
+      "Teal Sparkles",
+      "Teal Hoodie",
+      "Tired",
+      "Shocked",
+      "Scar",
+      "Heavy Brown",
+      "Brown",
+      "Pink Phone",
+      "Lucky",
+      "Black Head Band",
+      "Red",
+      "Gasp"
+    ]
+  },
+  {
+    "id": 1868,
+    "name": "Angrybread",
+    "traits": [
+      "Teal",
+      "Green Sleeveless",
+      "Round",
+      "Sparkles",
+      "Angry",
+      "Light Brown",
+      "Brown",
+      "Baguette",
+      "Common",
+      "Red",
+      "Finger",
+      "Sad"
+    ]
+  },
+  {
+    "id": 6300,
+    "name": "Dango",
+    "traits": [
+      "Dark Blue",
+      "Red Thin Scarf",
+      "Normal",
+      "Tired",
+      "Sad",
+      "Rainbow",
+      "Rainbow",
+      "Blue Cyberpunk Katana",
+      "Lucky",
+      "Red Headband",
+      "Rainbow",
+      "Passive"
+    ]
+  },
+  {
+    "id": 1270,
+    "name": "Low Tier Phenom",
+    "traits": [
+      "Red",
+      "Sad",
+      "Round",
+      "Dot",
+      "Sad",
+      "Particles",
+      "Light Grey",
+      "Grey",
+      "Vanilla M9",
+      "Common",
+      "Jiangshi",
+      "Green",
+      "Open Smile"
+    ]
+  },
+  {
+    "id": 2188,
+    "name": "MOSE",
+    "traits": [
+      "Light Green",
+      "Straw Kimono",
+      "Normal",
+      "Determined",
+      "Dot",
+      "Heavy Yellow",
+      "Yellow",
+      "Lucky",
+      "Large Straw Hat",
+      "Yellow",
+      "Open Smile"
+    ]
+  },
+  {
+    "id": 4819,
+    "name": "akuma",
+    "traits": [
+      "akuma",
+      "Lucky"
+    ]
+  },
+  {
+    "id": 1055,
+    "name": "THANK U 4 PLAYIN",
+    "traits": [
+      "Shadow Purple",
+      "Normal",
+      "Round",
+      "Sparkles",
+      "Sus",
+      "Talisman",
+      "Shadow",
+      "Sake Bottle",
+      "Lucky",
+      "Shadow",
+      "Finger",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 235,
+    "name": "SuperMagus",
+    "traits": [
+      "Shadow Purple",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Shadow",
+      "Divine",
+      "Jiangshi",
+      "Shadow",
+      "Finger",
+      "Tongue out",
+      "Peace Sign"
+    ]
+  },
+  {
+    "id": 2828,
+    "name": "Joy Boy",
+    "traits": [
+      "Red",
+      "Normal",
+      "Frown",
+      "Rain",
+      "Rainbow",
+      "Rainbow",
+      "Lucky",
+      "Rainbow",
+      "Passive",
+      "Peace Sign"
+    ]
+  },
+  {
+    "id": 6882,
+    "name": "Fuoco Fatuo",
+    "traits": [
+      "Spirit Blue",
+      "Gold Kimono",
+      "Normal",
+      "Tired",
+      "Surprised",
+      "Spirit",
+      "Spirit Flame",
+      "Common",
+      "Kitsune Mask",
+      "Spirit",
+      "Passive"
+    ]
+  },
+  {
+    "id": 4813,
+    "name": "Milo Thatch",
+    "traits": [
+      "Gallery Grey",
+      "Red Bowtie",
+      "Normal",
+      "Round",
+      "Watery",
+      "Sus",
+      "Scar",
+      "Light Yellow",
+      "Yellow",
+      "Common",
+      "Shiny Blue Glasses",
+      "Yellow",
+      "Devious"
+    ]
+  },
+  {
+    "id": 392,
+    "name": "Teardrop",
+    "traits": [
+      "Teardrop",
+      "Divine"
+    ]
+  },
+  {
+    "id": 8717,
+    "name": "Caipirinha Time",
+    "traits": [
+      "Teal Sparkles",
+      "Kappa Bag",
+      "Normal",
+      "Tired",
+      "Angry",
+      "Eye Bags",
+      "Rainbow",
+      "Rainbow",
+      "Capirinha",
+      "Divine",
+      "Yellow Nightcap",
+      "Rainbow",
+      "Passive"
+    ]
+  },
+  {
+    "id": 3320,
+    "name": "Specter",
+    "traits": [
+      "Spirit Blue",
+      "Spirit Kimono",
+      "Normal",
+      "Tired",
+      "Angry",
+      "Spirit",
+      "Common",
+      "Spirit",
+      "Smile"
+    ]
+  },
+  {
+    "id": 1454,
+    "name": "Peelbert Grumps",
+    "traits": [
+      "Yellow",
+      "Banana Onesie",
+      "Tired",
+      "Tired",
+      "Heavy Snow",
+      "Heavy Dark",
+      "Common",
+      "Pink",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 7247,
+    "name": "Sam Nielbyyy",
+    "traits": [
+      "Spirit Aqua",
+      "Rainbow Kimono",
+      "Normal",
+      "Bored",
+      "Dot",
+      "Angry",
+      "Spirit",
+      "Gold Rose",
+      "Divine",
+      "Spirit",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 1569,
+    "name": "Sir Carrotstein",
+    "traits": [
+      "Green",
+      "Blue Overalls",
+      "Normal",
+      "Bored",
+      "Purple Round Glasses",
+      "Rainbow",
+      "Rainbow",
+      "Carrot",
+      "Divine",
+      "Rainbow",
+      "Peace Sign",
+      "Smile"
+    ]
+  },
+  {
+    "id": 8587,
+    "name": "The Peelomancer",
+    "traits": [
+      "Shadow Purple",
+      "Normal",
+      "Crying",
+      "Watery",
+      "Angry",
+      "Shadow",
+      "Bananagasm",
+      "Divine",
+      "Witch Hat",
+      "Shadow",
+      "Surprised",
+      "Finger"
+    ]
+  },
+  {
+    "id": 5168,
+    "name": "Nisheep",
+    "traits": [
+      "Light Pink",
+      "Black Sheep Onesie",
+      "Round",
+      "Heart",
+      "Sus",
+      "Sakura",
+      "Rainbow",
+      "Rainbow",
+      "Common",
+      "Rainbow",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 6913,
+    "name": "Butthole Moki",
+    "traits": [
+      "Butthole Moki",
+      "Special"
+    ]
+  },
+  {
+    "id": 7254,
+    "name": "Nomad",
+    "traits": [
+      "Nomad",
+      "Divine"
+    ]
+  },
+  {
+    "id": 8044,
+    "name": "Mad Scientist",
+    "traits": [
+      "Mad Scientist Moki",
+      "Special"
+    ]
+  },
+  {
+    "id": 939,
+    "name": "Pengu",
+    "traits": [
+      "Yellow",
+      "Penguin Onesie",
+      "Normal",
+      "Shocked",
+      "Angry",
+      "Sakura",
+      "Heavy Moca",
+      "Moca",
+      "Doodle Book",
+      "Lucky",
+      "Green",
+      "Sad"
+    ]
+  },
+  {
+    "id": 6777,
+    "name": "Roninku",
+    "traits": [
+      "Roninku",
+      "Lucky"
+    ]
+  },
+  {
+    "id": 857,
+    "name": "Shine",
+    "traits": [
+      "Purple",
+      "Gold Kimono",
+      "Tired",
+      "Crying",
+      "Dot",
+      "Blush",
+      "Light Grey",
+      "Grey",
+      "Capirinha",
+      "Common",
+      "Smiley Mask",
+      "Green",
+      "Scared"
+    ]
+  },
+  {
+    "id": 4011,
+    "name": "Shadowstorm",
+    "traits": [
+      "Shadow Purple",
+      "Blue Bunny Bag",
+      "Normal",
+      "Relaxed",
+      "Scar",
+      "Shadow",
+      "Divine",
+      "Shadow",
+      "Scared"
+    ]
+  },
+  {
+    "id": 7021,
+    "name": "Poo Licker",
+    "traits": [
+      "Dark Green",
+      "Normal",
+      "Bored",
+      "Rain",
+      "Heavy Yellow",
+      "Yellow",
+      "Gold Chocolate",
+      "Common",
+      "Moku Cap",
+      "Pink",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 368,
+    "name": "DUNG SHOGUN",
+    "traits": [
+      "Shadow Purple",
+      "Ronin",
+      "Normal",
+      "Determined",
+      "Dot",
+      "Talisman",
+      "Shadow",
+      "Gold Chocolate",
+      "Divine",
+      "Ronin",
+      "Shadow",
+      "Scared"
+    ]
+  },
+  {
+    "id": 7942,
+    "name": "Extra Onions",
+    "traits": [
+      "Spirit Blue",
+      "Normal",
+      "Tired",
+      "Sus",
+      "Sakura",
+      "Spirit",
+      "Leek",
+      "Divine",
+      "Halo",
+      "Spirit",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 4509,
+    "name": "KingOfRatz",
+    "traits": [
+      "KingOfRatz",
+      "Lucky"
+    ]
+  },
+  {
+    "id": 2284,
+    "name": "67",
+    "traits": [
+      "Yellow Sparkles",
+      "Banana Onesie",
+      "Tired",
+      "Crying",
+      "Watery",
+      "Anime Zoom",
+      "Gold",
+      "Gold",
+      "Divine",
+      "Gold",
+      "Passive"
+    ]
+  },
+  {
+    "id": 6066,
+    "name": "Zaris",
+    "traits": [
+      "Teal",
+      "Teal Hoodie",
+      "Normal",
+      "Crying",
+      "Heart",
+      "Rainbow",
+      "Rainbow",
+      "White Origami",
+      "Divine",
+      "Rainbow",
+      "Scared"
+    ]
+  },
+  {
+    "id": 1235,
+    "name": "Bio Phantom",
+    "traits": [
+      "Spirit Blue",
+      "Normal",
+      "Frown",
+      "Sus",
+      "Sakura",
+      "Spirit",
+      "Spirit Flame",
+      "Divine",
+      "Spirit",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 3246,
+    "name": "Kroni",
+    "traits": [
+      "Ronin Aurora",
+      "White Bunny Bag",
+      "Normal",
+      "Frown",
+      "Sus",
+      "Teeth",
+      "Light Brown",
+      "Brown",
+      "Buff Moki",
+      "Common",
+      "Gold Headband",
+      "Red",
+      "Smile"
+    ]
+  },
+  {
+    "id": 4177,
+    "name": "Ronin Spirit",
+    "traits": [
+      "Spirit Aqua",
+      "Ronin",
+      "Normal",
+      "Frown",
+      "Sus",
+      "Spirit",
+      "Golden Ramen",
+      "Divine",
+      "Ronin",
+      "Spirit",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 6014,
+    "name": "YP The Fearless",
+    "traits": [
+      "Spirit Blue",
+      "Ronin",
+      "Normal",
+      "Frown",
+      "Surprised",
+      "Particles",
+      "Spirit",
+      "Gold Coin",
+      "Divine",
+      "Ronin",
+      "Spirit",
+      "Smile"
+    ]
+  },
+  {
+    "id": 3841,
+    "name": "SMG Loves You",
+    "traits": [
+      "Shadow Blue",
+      "Mom Tattoo",
+      "Normal",
+      "Round",
+      "Watery",
+      "Sad",
+      "Shadow",
+      "Shadow Flame",
+      "Divine",
+      "Shadow",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 2730,
+    "name": "Valkyrie",
+    "traits": [
+      "Spirit Aqua",
+      "Goddess Shall",
+      "Normal",
+      "Determined",
+      "Dot",
+      "Spirit",
+      "Gord",
+      "Lucky",
+      "Halo",
+      "Spirit",
+      "Finger",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 4258,
+    "name": "Starfluff",
+    "traits": [
+      "Starfluff",
+      "Divine"
+    ]
+  },
+  {
+    "id": 1176,
+    "name": "Fortune Gobbler",
+    "traits": [
+      "Shadow Purple",
+      "Normal",
+      "Crying",
+      "Heart",
+      "Bushy",
+      "Shadow",
+      "Gold Raffle",
+      "Divine",
+      "Shadow",
+      "Passive"
+    ]
+  },
+  {
+    "id": 8016,
+    "name": "Lil MC Moki",
+    "traits": [
+      "Green",
+      "White Bunny Bag",
+      "Normal",
+      "Bored",
+      "Light Dark",
+      "Dark",
+      "Common",
+      "Pink Snapback",
+      "Onyx",
+      "Passive"
+    ]
+  },
+  {
+    "id": 4407,
+    "name": "BenDan",
+    "traits": [
+      "Teal",
+      "Red Thin Scarf",
+      "Normal",
+      "Bored",
+      "Sus",
+      "Light Brown",
+      "Brown",
+      "Doodle Book",
+      "Common",
+      "Pink Kanzashi",
+      "Green",
+      "Tongue out",
+      "Finger"
+    ]
+  },
+  {
+    "id": 6821,
+    "name": "24K",
+    "traits": [
+      "Yellow Sparkles",
+      "Excited",
+      "Determined",
+      "Sparkles",
+      "Rain",
+      "Gold",
+      "Gold",
+      "Common",
+      "Gold",
+      "Sad"
+    ]
+  },
+  {
+    "id": 7338,
+    "name": "Mokuna",
+    "traits": [
+      "Light Pink",
+      "Teal Hoodie",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Rainbow",
+      "Rainbow",
+      "Decorators Brush",
+      "Divine",
+      "Moku Cap",
+      "Rainbow",
+      "Smile"
+    ]
+  },
+  {
+    "id": 6009,
+    "name": "Filthy",
+    "traits": [
+      "Spirit Aqua",
+      "Maid Apron",
+      "Normal",
+      "Round",
+      "Big Sparkles",
+      "Rain",
+      "Spirit",
+      "Lattern",
+      "Divine",
+      "Maid Headband",
+      "Spirit",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 227,
+    "name": "The Golden Boy",
+    "traits": [
+      "Dark Grey",
+      "Excited",
+      "Tired",
+      "Surprised",
+      "Gold",
+      "Gold",
+      "Gacha Ballz",
+      "Lucky",
+      "Sparkle Cap",
+      "Gold",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 7947,
+    "name": "CitraVale",
+    "traits": [
+      "Shadow Purple",
+      "Lemon Bag",
+      "Normal",
+      "Crying",
+      "Sparkles",
+      "Bushy",
+      "Shadow",
+      "Divine",
+      "Shadow",
+      "Scared",
+      "Finger"
+    ]
+  },
+  {
+    "id": 7405,
+    "name": "Somber",
+    "traits": [
+      "Light Yellow",
+      "Blue Artist Apron",
+      "Normal",
+      "Bored",
+      "Sad",
+      "Rainbow",
+      "Rainbow",
+      "Water",
+      "Lucky",
+      "Pirate Bandana",
+      "Rainbow",
+      "Hmph"
+    ]
+  },
+  {
+    "id": 1105,
+    "name": "Golden Purps",
+    "traits": [
+      "Grey",
+      "Purple Sleeveless",
+      "Frown",
+      "Gold",
+      "Gold",
+      "Banana Milk",
+      "Lucky",
+      "Gold",
+      "Sad"
+    ]
+  },
+  {
+    "id": 8509,
+    "name": "Rynnie",
+    "traits": [
+      "Light Green",
+      "Blue Artist Apron",
+      "Normal",
+      "Round",
+      "Sparkles",
+      "Gold",
+      "Gold",
+      "Lucky",
+      "Sparkle Cap",
+      "Gold",
+      "Chubby"
+    ]
+  },
+  {
+    "id": 8097,
+    "name": "Guppy93Allan",
+    "traits": [
+      "Shadow Purple",
+      "Pink Bag",
+      "Normal",
+      "Round",
+      "Watery",
+      "Talisman",
+      "Shadow",
+      "Gold Pipe",
+      "Divine",
+      "Shadow",
+      "Peace Sign",
+      "Smile"
+    ]
+  },
+  {
+    "id": 8415,
+    "name": "Golden Delicious",
+    "traits": [
+      "Yellow",
+      "Normal",
+      "Bored",
+      "Dot",
+      "Sakura",
+      "Gold",
+      "Gold",
+      "Lucky",
+      "Apple Beret",
+      "Gold",
+      "Sad"
+    ]
+  },
+  {
+    "id": 1133,
+    "name": "Bearish",
+    "traits": [
+      "Light Green",
+      "Round",
+      "Big Sparkles",
+      "Angry",
+      "Talisman",
+      "Light Moca",
+      "Common",
+      "Bear Head",
+      "Onyx",
+      "Gasp"
+    ]
+  },
+  {
+    "id": 5193,
+    "name": "Red Whine",
+    "traits": [
+      "Shadow Blue",
+      "Normal",
+      "Round",
+      "Big Sparkles",
+      "Bushy",
+      "Shadow",
+      "Red Wine",
+      "Divine",
+      "Skull Mask",
+      "Shadow",
+      "Peace Sign",
+      "Scared"
+    ]
+  },
+  {
+    "id": 3080,
+    "name": "Shadrel Kagekin",
+    "traits": [
+      "Shadow Blue",
+      "Gold Kimono",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Shadow",
+      "Lit Lattern",
+      "Divine",
+      "Shadow",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 5256,
+    "name": "Golden Nugget",
+    "traits": [
+      "Shadow Purple",
+      "Gold Kimono",
+      "Normal",
+      "Crying",
+      "Heart",
+      "Sus",
+      "Shadow",
+      "Jingu Bang",
+      "Divine",
+      "Shadow",
+      "Passive"
+    ]
+  },
+  {
+    "id": 6142,
+    "name": "Garrison",
+    "traits": [
+      "Shadow Blue",
+      "Casual Kimono",
+      "Normal",
+      "Crying",
+      "Watery",
+      "Sus",
+      "Shadow",
+      "Shadow Flame",
+      "Common",
+      "Witch Hat",
+      "Shadow",
+      "Devious"
+    ]
+  },
+  {
+    "id": 5925,
+    "name": "Rae",
+    "traits": [
+      "Light Blue",
+      "Normal",
+      "Bored",
+      "Heavy Brown",
+      "Brown",
+      "Blue Wagasa",
+      "Common",
+      "Star Glasses",
+      "Pink",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 3722,
+    "name": "Moki Fanatic",
+    "traits": [
+      "Grey",
+      "Teal Hoodie",
+      "Sad",
+      "Shocked",
+      "Surprised",
+      "Blush",
+      "Heavy Brown",
+      "Brown",
+      "Blue Sensu",
+      "Lucky",
+      "Teal",
+      "Gasp"
+    ]
+  },
+  {
+    "id": 1173,
+    "name": "BadAss",
+    "traits": [
+      "Shadow Purple",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Talisman",
+      "Shadow",
+      "Jingu Bang",
+      "Divine",
+      "Shadow",
+      "Sad"
+    ]
+  },
+  {
+    "id": 670,
+    "name": "Tea Bone",
+    "traits": [
+      "Purple Sparkles",
+      "Teal Hoodie",
+      "Tired",
+      "Round",
+      "Watery",
+      "Sad",
+      "Sakura",
+      "Light Brown",
+      "Brown",
+      "Pink Teacup",
+      "Lucky",
+      "Fish Bone",
+      "Onyx",
+      "Scared"
+    ]
+  },
+  {
+    "id": 8401,
+    "name": "I WILL FARM U",
+    "traits": [
+      "Spirit Blue",
+      "Normal",
+      "Bored",
+      "Sus",
+      "Rain",
+      "Spirit",
+      "Bronze coin",
+      "Lucky",
+      "Spirit",
+      "Passive"
+    ]
+  },
+  {
+    "id": 987,
+    "name": "sweet90s",
+    "traits": [
+      "sweet90s",
+      "Common"
+    ]
+  },
+  {
+    "id": 8642,
+    "name": "MAKE",
+    "traits": [
+      "Pink",
+      "Blue Kimono",
+      "Tired",
+      "Round",
+      "Watery",
+      "Blush",
+      "Light Yellow",
+      "Yellow",
+      "Sake Bottle",
+      "Common",
+      "Yellow",
+      "Smile"
+    ]
+  },
+  {
+    "id": 3847,
+    "name": "Stark",
+    "traits": [
+      "Dark Grey",
+      "Sad",
+      "Round",
+      "Sparkles",
+      "Particles",
+      "Gold",
+      "Gold",
+      "Shepherds Crank",
+      "Divine",
+      "TMA Noble Skull",
+      "Gold",
+      "Smile"
+    ]
+  },
+  {
+    "id": 8411,
+    "name": "Bun Bun",
+    "traits": [
+      "Dark Blue",
+      "Blue Bunny Bag",
+      "Sad",
+      "Tired",
+      "Sad",
+      "Light Dark",
+      "Dark",
+      "Lit Lattern",
+      "Common",
+      "Teal",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 5710,
+    "name": "Fernecito",
+    "traits": [
+      "Yellow",
+      "Blue Overalls",
+      "Normal",
+      "Bored",
+      "Rainbow",
+      "Rainbow",
+      "Fernet",
+      "Common",
+      "Blue Snapback",
+      "Rainbow",
+      "Devious"
+    ]
+  },
+  {
+    "id": 5125,
+    "name": "Fire Moki",
+    "traits": [
+      "Fire Moki",
+      "Special"
+    ]
+  },
+  {
+    "id": 4919,
+    "name": "Moki Pochi Moki",
+    "traits": [
+      "Moki Pochi Moki",
+      "Special"
+    ]
+  },
+  {
+    "id": 73,
+    "name": "Trippy",
+    "traits": [
+      "Shadow Purple",
+      "Normal",
+      "Round",
+      "Watery",
+      "Angry",
+      "Shadow",
+      "Mushroom",
+      "Divine",
+      "Halo",
+      "Shadow",
+      "Sad"
+    ]
+  },
+  {
+    "id": 1444,
+    "name": "Zombina",
+    "traits": [
+      "Purple",
+      "Pink Overalls",
+      "Normal",
+      "Frown",
+      "Dot",
+      "Bushy",
+      "Light Dark",
+      "Dark",
+      "Shepherds Crank",
+      "Lucky",
+      "Big Bow",
+      "Pink",
+      "Finger",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 4642,
+    "name": "Neuty",
+    "traits": [
+      "Ronin Moon",
+      "Tired",
+      "Tired",
+      "Sus",
+      "Black Aviator",
+      "Light Dark",
+      "Dark",
+      "Common",
+      "Blue",
+      "Peace Sign",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 5249,
+    "name": "One",
+    "traits": [
+      "Teal",
+      "Straw Kimono",
+      "Sad",
+      "Frown",
+      "Dot",
+      "Sus",
+      "Eye Patch",
+      "Gold",
+      "Gold",
+      "Lucky",
+      "Large Straw Hat",
+      "Gold",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 3284,
+    "name": "Cammyyy",
+    "traits": [
+      "Shadow Blue",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Shadow",
+      "Ratz Ballz",
+      "Common",
+      "Shadow",
+      "Peace Sign",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 4597,
+    "name": "Dr Shroom",
+    "traits": [
+      "Shadow Purple",
+      "Jiangshi",
+      "Normal",
+      "Frown",
+      "Sus",
+      "Shadow",
+      "Mushroom",
+      "Divine",
+      "Shadow",
+      "Devious"
+    ]
+  },
+  {
+    "id": 8277,
+    "name": "Palmer",
+    "traits": [
+      "Shadow Purple",
+      "Samurai",
+      "Normal",
+      "Round",
+      "Dot",
+      "Sus",
+      "Bite",
+      "Shadow",
+      "Divine",
+      "Horns",
+      "Shadow",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 4437,
+    "name": "Numbskull",
+    "traits": [
+      "Shadow Purple",
+      "Normal",
+      "Frown",
+      "Sus",
+      "Shadow",
+      "Divine",
+      "Ice Pack",
+      "Shadow",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 1749,
+    "name": "Stone of David",
+    "traits": [
+      "Light Green",
+      "Red Thin Scarf",
+      "Normal",
+      "Frown",
+      "Blue Pacifier",
+      "Light Brown",
+      "Brown",
+      "Common",
+      "White Chef Wrap",
+      "Green",
+      "Finger",
+      "Surprised",
+      "Finger"
+    ]
+  },
+  {
+    "id": 2288,
+    "name": "MOKIPACK",
+    "traits": [
+      "MOKIPACK",
+      "Divine"
+    ]
+  },
+  {
+    "id": 5960,
+    "name": "Its Madam",
+    "traits": [
+      "Pink",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Light Grey",
+      "Pink Bob",
+      "Common",
+      "Red",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 6606,
+    "name": "Dark Lord Moki",
+    "traits": [
+      "Dark Lord Moki",
+      "Special"
+    ]
+  },
+  {
+    "id": 7303,
+    "name": "Straw Barry",
+    "traits": [
+      "Yellow",
+      "Straw Kimono",
+      "Normal",
+      "Frown",
+      "Sad",
+      "Light Grey",
+      "Grey",
+      "Lucky",
+      "Large Straw Hat",
+      "White",
+      "Scared"
+    ]
+  },
+  {
+    "id": 4772,
+    "name": "Milky",
+    "traits": [
+      "Gallery Grey",
+      "Cow Onesie",
+      "Frown",
+      "Angry",
+      "Light Snow",
+      "Heavy Brown",
+      "Brown",
+      "Common",
+      "Red",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 5705,
+    "name": "Fenrir",
+    "traits": [
+      "Light Yellow",
+      "Wolf Onesie",
+      "Determined",
+      "Dot",
+      "Light Brown",
+      "Brown",
+      "Pink Sensu",
+      "Common",
+      "Teal",
+      "Chubby"
+    ]
+  },
+  {
+    "id": 3624,
+    "name": "Animo",
+    "traits": [
+      "Shadow Purple",
+      "Gold Kimono",
+      "Normal",
+      "Tired",
+      "Sad",
+      "Talisman",
+      "Shadow",
+      "Lucky",
+      "Shadow",
+      "Passive"
+    ]
+  },
+  {
+    "id": 3527,
+    "name": "69",
+    "traits": [
+      "Spirit Blue",
+      "Ninja",
+      "Normal",
+      "Happy",
+      "Light Snow",
+      "Spirit",
+      "Bananagasm",
+      "Divine",
+      "Spirit",
+      "Smile"
+    ]
+  },
+  {
+    "id": 7215,
+    "name": "Krampy",
+    "traits": [
+      "Blue",
+      "Black Sheep Onesie",
+      "Bored",
+      "Blush",
+      "Rainbow",
+      "Rainbow",
+      "Pizza",
+      "Divine",
+      "Rainbow",
+      "Smile"
+    ]
+  },
+  {
+    "id": 964,
+    "name": "Shady",
+    "traits": [
+      "Light Yellow",
+      "Daimyo Kimono With Katanas",
+      "Normal",
+      "Bored",
+      "Sus",
+      "Villian Sunglasses",
+      "Rain",
+      "Light Moca",
+      "Moca",
+      "Steamed Bun",
+      "Lucky",
+      "Green",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 3932,
+    "name": "Citrus",
+    "traits": [
+      "Grey",
+      "Normal",
+      "Happy",
+      "Light Yellow",
+      "Yellow",
+      "Lucky",
+      "Sparkle Cap",
+      "Green",
+      "Scared",
+      "Peace Sign"
+    ]
+  },
+  {
+    "id": 467,
+    "name": "Salvador Dali",
+    "traits": [
+      "Light Green",
+      "Blue Artist Apron",
+      "Sad",
+      "Determined",
+      "Sparkles",
+      "Light Dark",
+      "Dark",
+      "White Wine",
+      "Common",
+      "Blue",
+      "Hmph"
+    ]
+  },
+  {
+    "id": 4341,
+    "name": "Mushroom Glasses",
+    "traits": [
+      "Dark Blue",
+      "Normal",
+      "Crying",
+      "Sparkles",
+      "Angry",
+      "Sunglasses",
+      "Rainbow",
+      "Rainbow",
+      "Mushroom",
+      "Lucky",
+      "Rainbow",
+      "Smile"
+    ]
+  },
+  {
+    "id": 4246,
+    "name": "deadlykitten",
+    "traits": [
+      "Shadow Purple",
+      "Normal",
+      "Spaced out",
+      "Angry",
+      "Scar",
+      "Shadow",
+      "Bananagasm",
+      "Lucky",
+      "Halo",
+      "Shadow",
+      "Hmph"
+    ]
+  },
+  {
+    "id": 6602,
+    "name": "Miyamoto Musashi",
+    "traits": [
+      "Green",
+      "Yellow Bandana",
+      "Normal",
+      "Round",
+      "Big Sparkles",
+      "Eye Bags",
+      "Rain",
+      "Heavy Grey",
+      "Grey",
+      "Blue Cyberpunk Katana",
+      "Lucky",
+      "Red Headband",
+      "Green",
+      "Sad"
+    ]
+  },
+  {
+    "id": 2485,
+    "name": "SinTank",
+    "traits": [
+      "Dark Blue",
+      "Garbage Can",
+      "Excited",
+      "Determined",
+      "Sparkles",
+      "Light Brown",
+      "Brown",
+      "Common",
+      "Purple",
+      "Passive"
+    ]
+  },
+  {
+    "id": 4137,
+    "name": "Clutch",
+    "traits": [
+      "Light Blue",
+      "Tired",
+      "Bored",
+      "Blush",
+      "Particles",
+      "Light Brown",
+      "Brown",
+      "Mochi",
+      "Common",
+      "Pirate Bandana",
+      "Yellow",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Two",
+    "traits": [
+      "Light Blue",
+      "Normal",
+      "Shocked",
+      "Spirits",
+      "Heavy Moca",
+      "Moca",
+      "Fishbone",
+      "Common",
+      "Moku Cap",
+      "Green",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 2661,
+    "name": "Mokuhadely",
+    "traits": [
+      "Mokuhadely",
+      "Common"
+    ]
+  },
+  {
+    "id": 3340,
+    "name": "SweetPotato",
+    "traits": [
+      "Grey",
+      "Ronin",
+      "Normal",
+      "Crying",
+      "Big Sparkles",
+      "Blush",
+      "Rainbow",
+      "Rainbow",
+      "Lucky",
+      "Ronin",
+      "Rainbow",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 316,
+    "name": "Maid of Coins",
+    "traits": [
+      "Dark Grey",
+      "Maid Apron",
+      "Tired",
+      "Round",
+      "Big Sparkles",
+      "Surprised",
+      "Light Grey",
+      "Grey",
+      "Gold Coin",
+      "Lucky",
+      "Maid Headband",
+      "Teal",
+      "Hmph"
+    ]
+  },
+  {
+    "id": 6536,
+    "name": "Rainbow Queen",
+    "traits": [
+      "Blue",
+      "Green Overalls",
+      "Normal",
+      "Bored",
+      "Rainbow",
+      "Rainbow",
+      "Coxinha",
+      "Divine",
+      "Pink Kanzashi",
+      "Rainbow",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 962,
+    "name": "Mokiwitch",
+    "traits": [
+      "Mokiwitch",
+      "Divine"
+    ]
+  },
+  {
+    "id": 7608,
+    "name": "Sydney",
+    "traits": [
+      "Purple Sparkles",
+      "Normal",
+      "Frown",
+      "Sus",
+      "Light Moca",
+      "Blonde with Flower",
+      "Yakitori",
+      "Common",
+      "Red",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 1071,
+    "name": "Lil Tomato",
+    "traits": [
+      "Pink",
+      "Tired",
+      "Excited",
+      "Sad",
+      "Annoyed",
+      "Heavy Brown",
+      "Brown",
+      "Tomato",
+      "Common",
+      "Yellow",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 8180,
+    "name": "Dheu",
+    "traits": [
+      "Light Blue",
+      "Green Overalls",
+      "Normal",
+      "Frown",
+      "Sad",
+      "Rain",
+      "Heavy Grey",
+      "Grey",
+      "Common",
+      "Jiangshi",
+      "Purple",
+      "Drool"
+    ]
+  },
+  {
+    "id": 7958,
+    "name": "Borealis",
+    "traits": [
+      "Borealis",
+      "Lucky"
+    ]
+  },
+  {
+    "id": 5890,
+    "name": "Uni",
+    "traits": [
+      "Nature",
+      "Green Overalls",
+      "Normal",
+      "Bored",
+      "Angry",
+      "Spirits",
+      "Heavy Yellow",
+      "Yellow",
+      "Fish",
+      "Lucky",
+      "Oni Mask",
+      "Green",
+      "Sad"
+    ]
+  },
+  {
+    "id": 4434,
+    "name": "Sweatin Simmons",
+    "traits": [
+      "Yellow",
+      "Pink Top",
+      "Normal",
+      "Frown",
+      "Sus",
+      "Moustache",
+      "Rainbow",
+      "Rainbow",
+      "Toilet Paper",
+      "Divine",
+      "Pink Headband",
+      "Rainbow",
+      "Smile"
+    ]
+  },
+  {
+    "id": 3582,
+    "name": "Mushi",
+    "traits": [
+      "Dark Fog",
+      "Normal",
+      "Round",
+      "Dot",
+      "Sad",
+      "Heavy Moca",
+      "Moca",
+      "Green Beetle",
+      "Common",
+      "Green",
+      "Devious"
+    ]
+  },
+  {
+    "id": 8579,
+    "name": "Tamanuki",
+    "traits": [
+      "Tamanuki",
+      "Lucky"
+    ]
+  },
+  {
+    "id": 6221,
+    "name": "UnderdogByDesign",
+    "traits": [
+      "Yellow Sparkles",
+      "Normal",
+      "Frown",
+      "Clown Paint",
+      "Rain",
+      "Rainbow",
+      "Rainbow",
+      "Silver Coin",
+      "Divine",
+      "Red Hat",
+      "Rainbow",
+      "Peace Sign",
+      "Devious"
+    ]
+  },
+  {
+    "id": 7804,
+    "name": "Oniki",
+    "traits": [
+      "Oniki",
+      "Divine"
+    ]
+  },
+  {
+    "id": 1001,
+    "name": "Burns Wenipee",
+    "traits": [
+      "Red",
+      "Blue Overalls",
+      "Normal",
+      "Shocked",
+      "Sad",
+      "Eye Bags",
+      "Rainbow",
+      "Rainbow",
+      "Divine",
+      "Rainbow",
+      "Passive"
+    ]
+  },
+  {
+    "id": 807,
+    "name": "Banana Mogger",
+    "traits": [
+      "Ronin Aurora",
+      "Banana Onesie",
+      "Normal",
+      "Round",
+      "Big Sparkles",
+      "Rainbow Shades",
+      "Heavy Snow",
+      "Light Dark",
+      "Dark",
+      "Common",
+      "Teal",
+      "Sad"
+    ]
+  },
+  {
+    "id": 8759,
+    "name": "WillOfD",
+    "traits": [
+      "Grey Sparkles",
+      "Blue Overalls",
+      "Normal",
+      "Tired",
+      "Surprised",
+      "Eye Bags",
+      "Rain",
+      "Heavy Grey",
+      "Grey",
+      "Pirate Hook",
+      "Common",
+      "Pink Snapback",
+      "Pink",
+      "Disgust"
+    ]
+  },
+  {
+    "id": 818,
+    "name": "POOtaTurd",
+    "traits": [
+      "Spirit Aqua",
+      "Jiangshi",
+      "Normal",
+      "Frown",
+      "Sad",
+      "Heavy Snow",
+      "Spirit",
+      "Bowl of Eggs",
+      "Divine",
+      "Jiangshi",
+      "Spirit",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 6259,
+    "name": "BLAZIN ACE",
+    "traits": [
+      "Green",
+      "Teal Hoodie",
+      "Normal",
+      "Bored",
+      "Sus",
+      "Rainbow",
+      "Rainbow",
+      "Silver Coin",
+      "Divine",
+      "Tie Dye Headband",
+      "Rainbow",
+      "Smile"
+    ]
+  },
+  {
+    "id": 6293,
+    "name": "Karpathy",
+    "traits": [
+      "Yellow",
+      "Purple Hoodie",
+      "Tired",
+      "Bored",
+      "Gold",
+      "Gold",
+      "Strawberry Milk",
+      "Common",
+      "Gold",
+      "Yell"
+    ]
+  },
+  {
+    "id": 5232,
+    "name": "The Destroyer",
+    "traits": [
+      "Light Yellow",
+      "Grimbone",
+      "Normal",
+      "Round",
+      "Dot",
+      "Light Grey",
+      "Common",
+      "Red",
+      "Hmph",
+      "Finger"
+    ]
+  },
+  {
+    "id": 3717,
+    "name": "Artist Moki",
+    "traits": [
+      "Artist Moki",
+      "Special"
+    ]
+  },
+  {
+    "id": 5050,
+    "name": "Sleepy Gary",
+    "traits": [
+      "Purple",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Particles",
+      "Heavy Yellow",
+      "Yellow",
+      "Ratz Ballz",
+      "Lucky",
+      "Blue Nightcap",
+      "Green",
+      "Yell"
+    ]
+  },
+  {
+    "id": 539,
+    "name": "Bloodmoon",
+    "traits": [
+      "Pink",
+      "Kappa Onesie",
+      "Excited",
+      "Shocked",
+      "Sus",
+      "Villian Sunglasses",
+      "Heavy Yellow",
+      "Yellow",
+      "Emerald Hands Plushie",
+      "Common",
+      "Green",
+      "Scared"
+    ]
+  },
+  {
+    "id": 1826,
+    "name": "Mokington",
+    "traits": [
+      "Mokington",
+      "Divine"
+    ]
+  },
+  {
+    "id": 7370,
+    "name": "Hoppi",
+    "traits": [
+      "Spirit Blue",
+      "Jiangshi",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Blue Pacifier",
+      "Sakura",
+      "Spirit",
+      "Lucky",
+      "Jiangshi",
+      "Spirit",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 1494,
+    "name": "Spartacus",
+    "traits": [
+      "Light Blue",
+      "Towel",
+      "Normal",
+      "Frown",
+      "Sus",
+      "Bandaid",
+      "Rainbow",
+      "Rainbow",
+      "Big Stick",
+      "Divine",
+      "Towel",
+      "Rainbow",
+      "Devious"
+    ]
+  },
+  {
+    "id": 7691,
+    "name": "Ruddy",
+    "traits": [
+      "Grey",
+      "Yellow Artist Apron",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Rainbow",
+      "Rainbow",
+      "Leek",
+      "Divine",
+      "Black Beret",
+      "Rainbow",
+      "Sad"
+    ]
+  },
+  {
+    "id": 1600,
+    "name": "Not Nisheep",
+    "traits": [
+      "Light Pink",
+      "White Sheep Onesie",
+      "Crying",
+      "Watery",
+      "Rain",
+      "Heavy Yellow",
+      "Yellow",
+      "Buff Moki",
+      "Common",
+      "Blue",
+      "Sad"
+    ]
+  },
+  {
+    "id": 6824,
+    "name": "Ryu Ganken",
+    "traits": [
+      "Ronin Aurora",
+      "Straw Kimono",
+      "Normal",
+      "Tired",
+      "Rainbow",
+      "Rainbow",
+      "Common",
+      "Rainbow",
+      "Smile"
+    ]
+  },
+  {
+    "id": 298,
+    "name": "Defrankong",
+    "traits": [
+      "Dark Green",
+      "CyberKongz Onesie",
+      "Tired",
+      "Sad",
+      "Eye Bags",
+      "Heavy Grey",
+      "Grey",
+      "Lucky",
+      "Yellow",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 6769,
+    "name": "Not a Raccoon",
+    "traits": [
+      "Yellow",
+      "Garbage Can",
+      "Tired",
+      "Frown",
+      "Pointy",
+      "Light Brown",
+      "Brown",
+      "Common",
+      "Red",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 4784,
+    "name": "Poop Digger",
+    "traits": [
+      "Teal Sparkles",
+      "Tired",
+      "Spaced out",
+      "Angry",
+      "Heavy Dark",
+      "Dark",
+      "Shovel",
+      "Common",
+      "Pink",
+      "Smile"
+    ]
+  },
+  {
+    "id": 5110,
+    "name": "Mugsy",
+    "traits": [
+      "Yellow",
+      "WF Glider Gear",
+      "Excited",
+      "Round",
+      "Big Sparkles",
+      "Gold",
+      "Gold",
+      "Rootbeer",
+      "Divine",
+      "Gold",
+      "Scared"
+    ]
+  },
+  {
+    "id": 7360,
+    "name": "Kintama",
+    "traits": [
+      "Kintama",
+      "Divine"
+    ]
+  },
+  {
+    "id": 561,
+    "name": "Eggsy",
+    "traits": [
+      "Grey",
+      "Brown Egg",
+      "Tired",
+      "Round",
+      "Big Sparkles",
+      "Light Yellow",
+      "Chef Knife",
+      "Lucky",
+      "Brown Egg",
+      "Green",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 1095,
+    "name": "Nakimushi",
+    "traits": [
+      "Pink",
+      "Purple Hoodie",
+      "Normal",
+      "Relaxed",
+      "Heavy Dark",
+      "Common",
+      "Pink Bunny Headband",
+      "Green",
+      "Yell"
+    ]
+  },
+  {
+    "id": 2755,
+    "name": "Dracumoki",
+    "traits": [
+      "Dracumoki",
+      "Divine"
+    ]
+  },
+  {
+    "id": 1418,
+    "name": "PNLS",
+    "traits": [
+      "Light Blue",
+      "Teal Hoodie",
+      "Normal",
+      "Determined",
+      "Sparkles",
+      "Blush",
+      "Gold",
+      "Lucky",
+      "Pink Bunny Headband",
+      "Gold",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 3145,
+    "name": "FizzyTwinTails",
+    "traits": [
+      "Blue",
+      "Normal",
+      "Crying",
+      "Dot",
+      "Angry",
+      "Heavy Grey",
+      "Green Braids",
+      "Fernet",
+      "Common",
+      "Teal",
+      "Hmph"
+    ]
+  },
+  {
+    "id": 5031,
+    "name": "BADSPEED",
+    "traits": [
+      "Grey",
+      "Ninja Shirt",
+      "Excited",
+      "Round",
+      "Dot",
+      "Gold",
+      "Gold",
+      "White Origami",
+      "Divine",
+      "Gold",
+      "Tongue out"
+    ]
+  },
+  {
+    "id": 3015,
+    "name": "Gambit",
+    "traits": [
+      "Grey Sparkles",
+      "Kappa Onesie",
+      "Tired",
+      "Round",
+      "Big Sparkles",
+      "Light Dark",
+      "Dark",
+      "Moki Cards",
+      "Common",
+      "Red",
+      "Teeth Smile"
+    ]
+  },
+  {
+    "id": 6025,
+    "name": "Kuroshi",
+    "traits": [
+      "Shadow Purple",
+      "Ronin",
+      "Normal",
+      "Round",
+      "Heart",
+      "Angry",
+      "Bite",
+      "Shadow",
+      "Vanilla M9",
+      "Divine",
+      "Ronin",
+      "Shadow",
+      "Hmph"
+    ]
+  },
+  {
+    "id": 7302,
+    "name": "MK Ultra 8888",
+    "traits": [
+      "Pink",
+      "Teal Hoodie",
+      "Normal",
+      "Crying",
+      "Heart",
+      "Rainbow",
+      "Rainbow",
+      "Common",
+      "Jiangshi",
+      "Rainbow",
+      "Surprised"
+    ]
+  },
+  {
+    "id": 446,
+    "name": "Sir Brew",
+    "traits": [
+      "Purple",
+      "Red Sleeveless",
+      "Relaxed",
+      "Heavy Brown",
+      "Brown",
+      "Common",
+      "Blue",
+      "Peace Sign",
+      "Teeth Smile",
+      "Finger"
+    ]
+  },
+  {
+    "id": 5504,
+    "name": "JOEHNINGUS",
+    "traits": [
+      "Purple",
+      "Pink Overalls",
+      "Normal",
+      "Crying",
+      "Sparkles",
+      "Sus",
+      "Rainbow",
+      "Rainbow",
+      "Butter Knife",
+      "Divine",
+      "Pink Headband",
+      "Rainbow",
+      "Finger",
+      "Scared"
+    ]
+  },
+  {
+    "id": 8316,
+    "name": "Fishoo",
+    "traits": [
+      "Dark Green",
+      "Purple Hoodie",
+      "Excited",
+      "Crying",
+      "Watery",
+      "Light Dark",
+      "Dark",
+      "Fish",
+      "Common",
+      "Green",
+      "Hmph"
+    ]
+  }
+]

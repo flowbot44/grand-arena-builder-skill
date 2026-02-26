@@ -105,10 +105,23 @@ def validate_200_shape(payload: Any, path: str) -> List[str]:
         if key not in payload:
             errors.append(f"Missing top-level key: {key}")
 
+    list_data_paths = (
+        "/api/v1/leaderboards",
+        "/api/v1/leaderboards/active",
+        "/api/v1/mokis",
+        "/api/v1/mokis/{tokenId}/performances",
+        "/api/v1/performances",
+        "/api/v1/matches",
+    )
     data = payload.get("data")
-    if data is not None and not isinstance(data, list):
-        errors.append("`data` should be a list.")
-    elif isinstance(data, list) and data:
+    if path in list_data_paths:
+        if data is not None and not isinstance(data, list):
+            errors.append("`data` should be a list.")
+    else:
+        if data is not None and not isinstance(data, dict):
+            errors.append("`data` should be an object.")
+
+    if isinstance(data, list) and data:
         sample = data[0]
         if not isinstance(sample, dict):
             errors.append("`data[0]` should be an object.")
@@ -161,6 +174,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--win-type", default=None, choices=["gacha", "eliminations", "wart"], help="Query param: winType (for /api/v1/performances)")
     parser.add_argument("--match-date", default=None, help="Query param: matchDate YYYY-MM-DD (for /api/v1/performances and /api/v1/matches)")
     parser.add_argument("--token-id", default=None, help="Path param tokenId (for /api/v1/mokis/{tokenId}/performances)")
+    parser.add_argument("--path-match-id", default=None, help="Path param matchId (for /api/v1/matches/{matchId}...)")
     parser.add_argument("--owner-address", default=None, help="Query param: ownerAddress (for /api/v1/mokis)")
     parser.add_argument("--moki-class", default=None, help="Query param: class (for /api/v1/mokis)")
     parser.add_argument("--from-date", default=None, help="Query param: fromDate (ISO datetime)")
@@ -210,6 +224,12 @@ def main() -> int:
             print("Missing --token-id for /api/v1/mokis/{tokenId}/performances")
             return 2
         path = path.replace("{tokenId}", str(args.token_id))
+    if path in ("/api/v1/matches/{matchId}", "/api/v1/matches/{matchId}/stats", "/api/v1/matches/{matchId}/performances"):
+        match_id = args.path_match_id or args.match_id
+        if not match_id:
+            print(f"Missing --path-match-id (or --match-id) for {args.path}")
+            return 2
+        path = path.replace("{matchId}", str(match_id))
 
     query_params: Dict[str, Any] = {}
     if args.path == "/api/v1/leaderboards":
@@ -259,6 +279,11 @@ def main() -> int:
             "matchDate": args.match_date,
             "sort": args.sort or "updatedAt",
             "order": args.order,
+        }
+    elif args.path == "/api/v1/matches/{matchId}/performances":
+        query_params = {
+            "page": args.page,
+            "limit": args.limit,
         }
     query = encode_query_params(query_params)
     url = f"{args.base_url.rstrip('/')}{path}"

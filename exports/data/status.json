@@ -1,0 +1,22 @@
+{
+  "generated_at_utc": "2026-02-26T18:27:36.322998+00:00",
+  "latest_ingestion_run": {
+    "details_json": "{\"start\":\"2026-02-27\",\"end\":\"2026-02-27\",\"by_date\":{\"2026-02-27\":{\"matches_seen\":4430,\"matches_updated\":4039,\"enrich_candidates\":0,\"stats_upserts\":0,\"perf_upserts\":0}},\"seeded_champions\":180}",
+    "finished_at": "2026-02-26T15:58:18.447347+00:00",
+    "run_id": 30,
+    "started_at": "2026-02-26T15:57:31.122556+00:00",
+    "status": "success"
+  },
+  "raw_dates": [
+    "2026-02-20",
+    "2026-02-21",
+    "2026-02-22",
+    "2026-02-23",
+    "2026-02-24",
+    "2026-02-25",
+    "2026-02-26"
+  ],
+  "window_days": 7,
+  "window_end": "2026-02-26",
+  "window_start": "2026-02-20"
+}

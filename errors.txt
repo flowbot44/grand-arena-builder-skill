@@ -1,0 +1,13 @@
+Fetching data for champion 4642 (107/179)...
+DEBUG: attributes for champion 4642: {'Background': ['Ronin Moon'], 'Ear': ['Tired'], 'Eye': ['Tired'], 'Eyebrows': ['Sus'], 'Face Accessory': ['Black Aviator'], 'Fur': ['Light Dark'], 'Hair': ['Dark'], 'Hatched Egg': ['Common'], 'Leaf': ['Blue'], 'Left Arm': ['Peace Sign'], 'Mouth': ['Tongue out']}
+Warning: Unexpected attribute format for champion 4642: Background
+Warning: Unexpected attribute format for champion 4642: Ear
+Warning: Unexpected attribute format for champion 4642: Eye
+Warning: Unexpected attribute format for champion 4642: Eyebrows
+Warning: Unexpected attribute format for champion 4642: Face Accessory
+Warning: Unexpected attribute format for champion 4642: Fur
+Warning: Unexpected attribute format for champion 4642: Hair
+Warning: Unexpected attribute format for champion 4642: Hatched Egg
+Warning: Unexpected attribute format for champion 4642: Leaf
+Warning: Unexpected attribute format for champion 4642: Left Arm
+Warning: Unexpected attribute format for champion 4642: Mouth
