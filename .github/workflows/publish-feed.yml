@@ -84,7 +84,33 @@ jobs:
         run: python -m app.maintenance prune --db state/grandarena.db --keep-days 7
 
       - name: Export Static Feed
-        run: python -m app.export_feed --db state/grandarena.db --out exports/data --days 1 --lookahead-days 1
+        run: >
+          python -m app.export_feed
+          --db state/grandarena.db
+          --out exports/data
+          --days 7
+          --lookahead-days 1
+          --mutable-days-back 1
+          --mutable-days-forward 1
+          --cumulative-mutable-days-back 1
+
+      - name: Verify cumulative totals not empty
+        run: |
+          python - <<'PY'
+          import gzip
+          import json
+          import sys
+
+          p = "exports/data/cumulative/current_totals.json.gz"
+          with gzip.open(p, "rt", encoding="utf-8") as f:
+              rows = json.load(f)
+
+          count = len(rows) if isinstance(rows, list) else -1
+          print(f"current_totals_count={count}")
+          if count <= 0:
+              print("ERROR: cumulative/current_totals.json.gz is empty")
+              sys.exit(1)
+          PY
 
       - name: Pack DB State
         run: gzip -f state/grandarena.db

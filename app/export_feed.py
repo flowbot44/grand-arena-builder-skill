@@ -55,6 +55,44 @@ def _sha256_hex(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _read_json_if_exists(path: Path) -> Optional[Dict[str, Any]]:
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _read_gzip_json(path: Path) -> Any:
+    with gzip.open(path, "rt", encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def _raw_partition_entry_from_file(day_iso: str, path: Path) -> Dict[str, Any]:
+    payload = _read_gzip_json(path)
+    match_count = len(payload) if isinstance(payload, list) else 0
+    return {
+        "date": day_iso,
+        "url": (Path("partitions") / f"raw_matches_{day_iso}.json.gz").as_posix(),
+        "sha256": _sha256_hex(path),
+        "bytes": path.stat().st_size,
+        "match_count": match_count,
+    }
+
+
+def _cumulative_entry_from_file(day_iso: str, path: Path) -> Dict[str, Any]:
+    payload = _read_gzip_json(path)
+    player_count = len(payload) if isinstance(payload, list) else 0
+    return {
+        "date": day_iso,
+        "url": (Path("cumulative") / f"daily_totals_{day_iso}.json.gz").as_posix(),
+        "sha256": _sha256_hex(path),
+        "bytes": path.stat().st_size,
+        "player_count": player_count,
+    }
+
+
 def _match_rows_for_date(conn: sqlite3.Connection, match_date: str) -> List[sqlite3.Row]:
     return conn.execute(
         """
@@ -217,6 +255,9 @@ def export_feed(
     days: int,
     today: date,
     lookahead_days: int = 0,
+    mutable_days_back: Optional[int] = None,
+    mutable_days_forward: Optional[int] = None,
+    cumulative_mutable_days_back: Optional[int] = None,
 ) -> Dict[str, Any]:
     start = window_start(today, days)
     raw_end = today + timedelta(days=max(0, int(lookahead_days)))
@@ -229,8 +270,35 @@ def export_feed(
     partitions_dir.mkdir(parents=True, exist_ok=True)
     cumulative_dir.mkdir(parents=True, exist_ok=True)
 
+    prior_raw_manifest = _read_json_if_exists(out_dir / "latest.json") or {}
+    prior_raw_by_date = {
+        str(entry.get("date")): entry
+        for entry in prior_raw_manifest.get("partitions", [])
+        if isinstance(entry, dict) and entry.get("date")
+    }
+
     partition_entries: List[Dict[str, Any]] = []
+    raw_full_refresh = mutable_days_back is None and mutable_days_forward is None
+    raw_mutable_back = max(0, int(mutable_days_back or 0))
+    raw_mutable_forward = max(0, int(mutable_days_forward if mutable_days_forward is not None else lookahead_days))
+    raw_mutable_start = max(start, today - timedelta(days=raw_mutable_back))
+    raw_mutable_end = today + timedelta(days=raw_mutable_forward)
+
     for day_iso in raw_calendar_dates:
+        day_value = date.fromisoformat(day_iso)
+        should_refresh = raw_full_refresh or (raw_mutable_start <= day_value <= raw_mutable_end)
+        rel_path = Path("partitions") / f"raw_matches_{day_iso}.json.gz"
+        abs_path = out_dir / rel_path
+
+        if not should_refresh:
+            prior_entry = prior_raw_by_date.get(day_iso)
+            if prior_entry and abs_path.exists():
+                partition_entries.append(dict(prior_entry))
+                continue
+            if abs_path.exists():
+                partition_entries.append(_raw_partition_entry_from_file(day_iso, abs_path))
+                continue
+
         match_rows = _match_rows_for_date(conn, day_iso)
         payload_matches: List[Dict[str, Any]] = []
         for row in match_rows:
@@ -244,8 +312,6 @@ def export_feed(
                 }
             )
 
-        rel_path = Path("partitions") / f"raw_matches_{day_iso}.json.gz"
-        abs_path = out_dir / rel_path
         _write_gzip_json(abs_path, payload_matches)
         partition_entries.append(
             {
@@ -266,15 +332,67 @@ def export_feed(
     }
     _write_json(out_dir / "latest.json", raw_manifest)
 
-    scored_rows = _scored_rows_for_window(conn, start.isoformat(), today.isoformat())
+    prior_cumulative_manifest = _read_json_if_exists(out_dir / "cumulative" / "latest.json") or {}
+    prior_cumulative_by_date = {
+        str(entry.get("date")): entry
+        for entry in prior_cumulative_manifest.get("files", [])
+        if isinstance(entry, dict) and entry.get("date")
+    }
+
+    cumulative_full_refresh = cumulative_mutable_days_back is None
+    cumulative_back = max(0, int(cumulative_mutable_days_back if cumulative_mutable_days_back is not None else 0))
+    cumulative_mutable_start = max(start, today - timedelta(days=cumulative_back))
+
+    running: Dict[int, CumulativeTotals] = {}
+    cumulative_entries: List[Dict[str, Any]] = []
+    current_rows: List[Dict[str, Any]] = []
+    cumulative_compute_start = start
+
+    if not cumulative_full_refresh and cumulative_mutable_start > start:
+        seed_day = cumulative_mutable_start - timedelta(days=1)
+        seed_path = out_dir / "cumulative" / f"daily_totals_{seed_day.isoformat()}.json.gz"
+        if seed_path.exists():
+            try:
+                seed_rows = _read_gzip_json(seed_path)
+                if isinstance(seed_rows, list):
+                    for row in seed_rows:
+                        token_id = int(row["token_id"])
+                        running[token_id] = CumulativeTotals(
+                            token_id=token_id,
+                            moki_id=row.get("moki_id"),
+                            games_played_cum=int(row.get("games_played_cum", 0) or 0),
+                            wins_cum=int(row.get("wins_cum", 0) or 0),
+                            points_cum=float(row.get("points_cum", 0.0) or 0.0),
+                            eliminations_cum=float(row.get("eliminations_cum", 0.0) or 0.0),
+                            deposits_cum=float(row.get("deposits_cum", 0.0) or 0.0),
+                            wart_distance_cum=float(row.get("wart_distance_cum", 0.0) or 0.0),
+                        )
+                    for static_day in date_range(start, seed_day):
+                        day_iso = static_day.isoformat()
+                        rel_path = Path("cumulative") / f"daily_totals_{day_iso}.json.gz"
+                        abs_path = out_dir / rel_path
+                        prior_entry = prior_cumulative_by_date.get(day_iso)
+                        if prior_entry and abs_path.exists():
+                            cumulative_entries.append(dict(prior_entry))
+                        elif abs_path.exists():
+                            cumulative_entries.append(_cumulative_entry_from_file(day_iso, abs_path))
+                        else:
+                            running.clear()
+                            cumulative_entries = []
+                            break
+                    if running:
+                        cumulative_compute_start = cumulative_mutable_start
+            except Exception:
+                running.clear()
+                cumulative_entries = []
+
+    scored_rows = _scored_rows_for_window(conn, cumulative_compute_start.isoformat(), today.isoformat())
     by_date: Dict[str, List[sqlite3.Row]] = {}
     for row in scored_rows:
         by_date.setdefault(row["match_date"], []).append(row)
 
-    cumulative_entries: List[Dict[str, Any]] = []
-    running: Dict[int, CumulativeTotals] = {}
-    current_rows: List[Dict[str, Any]] = []
-    for day_iso in cumulative_calendar_dates:
+    for day_value in date_range(cumulative_compute_start, today):
+        day_iso = day_value.isoformat()
         for row in by_date.get(day_iso, []):
             token_id = int(row["token_id"])
             moki_id = row["moki_id"]
@@ -364,6 +482,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", default="exports/data", help="Output directory (e.g. exports/data)")
     parser.add_argument("--days", type=int, default=7, help="Rolling window day count")
     parser.add_argument("--lookahead-days", type=int, default=0, help="Additional future days for raw partition export")
+    parser.add_argument(
+        "--mutable-days-back",
+        type=int,
+        default=None,
+        help="If set, only refresh raw partitions from today-N days onward; older partition files are reused.",
+    )
+    parser.add_argument(
+        "--mutable-days-forward",
+        type=int,
+        default=None,
+        help="If set, only refresh raw partitions up to today+N future days.",
+    )
+    parser.add_argument(
+        "--cumulative-mutable-days-back",
+        type=int,
+        default=None,
+        help="If set, only refresh cumulative files from today-N days onward; older cumulative files are reused.",
+    )
     parser.add_argument("--today", default=date.today().isoformat(), help="UTC date override YYYY-MM-DD")
     return parser.parse_args()
 
@@ -378,6 +514,9 @@ def main() -> int:
         days=max(1, int(args.days)),
         today=date.fromisoformat(args.today),
         lookahead_days=max(0, int(args.lookahead_days)),
+        mutable_days_back=args.mutable_days_back,
+        mutable_days_forward=args.mutable_days_forward,
+        cumulative_mutable_days_back=args.cumulative_mutable_days_back,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0
