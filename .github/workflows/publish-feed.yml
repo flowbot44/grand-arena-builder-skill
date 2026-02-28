@@ -23,7 +23,7 @@ jobs:
       SEED_DB_URL: ${{ secrets.SEED_DB_URL }}
       GRANDARENA_DB_PATH: state/grandarena.db
       FETCH_MATCH_PERFORMANCES: "true"
-      LOOKBEHIND_DAYS: "1"
+      LOOKBEHIND_DAYS: "3"
       LOOKAHEAD_DAYS: "1"
     steps:
       - name: Checkout
@@ -90,9 +90,9 @@ jobs:
           --out exports/data
           --days 7
           --lookahead-days 1
-          --mutable-days-back 1
+          --mutable-days-back 3
           --mutable-days-forward 1
-          --cumulative-mutable-days-back 1
+          --cumulative-mutable-days-back 3
 
       - name: Verify cumulative totals not empty
         run: |
