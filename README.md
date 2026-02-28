@@ -278,6 +278,7 @@ Key routes:
 - `GET /api/non-champions/<token_id>/history`
 - `GET /api/non-champions/<token_id>/next-matches?limit=10`
 - `GET /api/system/status`
+- `GET /api/cumulative/current-totals`
 
 Response metadata includes:
 
@@ -285,6 +286,9 @@ Response metadata includes:
 - `window_start`
 - `window_end`
 - `insufficient_upcoming` (for sparse upcoming schedules)
+- `data_generated_at` (feed manifest generation timestamp)
+- `cache_age_seconds` (in-memory cache age)
+- `stale_data` (`true` when serving stale cache after feed refresh failure)
 
 ### What is stored in the SQLite database
 
@@ -322,22 +326,25 @@ Expected public URLs (replace `<user>`/`<repo>`):
 - `https://<user>.github.io/<repo>/data/cumulative/current_totals.json.gz`
 - `https://<user>.github.io/<repo>/data/cumulative/daily_totals_YYYY-MM-DD.json.gz`
 
-### Hourly publish flow
+### Scheduled publish flow
 
 Workflow file: `.github/workflows/publish-feed.yml`
 
-- Triggered hourly (`cron: "7 * * * *"`) and via manual dispatch.
+- Triggered every 2 hours (`cron: "0 */2 * * *"`, UTC) and via manual dispatch.
 - Restores the last DB state artifact (`state/grandarena.db.gz`) when available.
+- Optionally seeds the DB from `SEED_DB_URL` if no prior DB artifact exists.
 - Runs:
   - `python -m app.ingest hourly --db state/grandarena.db`
   - `python -m app.maintenance prune --db state/grandarena.db --keep-days 7`
-  - `python -m app.export_feed --db state/grandarena.db --out exports/data --days 7`
+  - `python -m app.export_feed --db state/grandarena.db --out exports/data --days 7 --lookahead-days 1 --mutable-days-back 1 --mutable-days-forward 1 --cumulative-mutable-days-back 1`
+- Verifies `exports/data/cumulative/current_totals.json.gz` is non-empty before deploy.
 - Publishes `exports/` to GitHub Pages.
 - Uploads updated `state/grandarena.db.gz` for the next run.
 
 Required secret:
 
 - `GRANDARENA_API_KEY`
+- `SEED_DB_URL` (optional, only used when no DB artifact is available)
 
 ### 7-day rolling raw partitions
 
@@ -352,7 +359,12 @@ Raw partition exports are generated per day:
 
 - `data/partitions/raw_matches_YYYY-MM-DD.json.gz`
 
-These files are designed for website/API consumers that need recent raw match/player/stats/performance data.
+Publish behavior for raw partitions:
+
+- Days older than `today-1` inside the 7-day window are reused from prior exports when available.
+- Only `yesterday`, `today`, and `today+1` are refreshed each run.
+
+These files are designed for website/API consumers that need recent raw match/player/stats/performance data without reprocessing all days every run.
 
 ### Cumulative daily totals dataset (tokenId keyed)
 
@@ -366,6 +378,12 @@ These files are designed for website/API consumers that need recent raw match/pl
 - `wart_distance_cum`
 - `as_of_date`
 
+Publish behavior for cumulative files:
+
+- Older cumulative daily files are reused when available.
+- Only `yesterday` and `today` cumulative files are recomputed each run.
+- `cumulative/current_totals.json.gz` should represent the latest cumulative snapshot and must be non-empty for deploy to proceed.
+
 Points formula:
 
 - `points = deposits*50 + eliminations*80 + floor(wart_distance/80)*45 + (won ? 300 : 0)`
@@ -377,3 +395,15 @@ For a Vercel-hosted FastAPI/static frontend app:
 - Read from the GitHub Pages URLs over HTTPS.
 - Add short TTL caching (for example 5-15 minutes) in the backend adapter.
 - Keep existing frontend endpoint contracts stable while swapping the backend data source from local SQLite to feed files.
+
+Feed adapter environment variables:
+
+- `FEED_BASE_URL` (default: `https://flowbot44.github.io/grand-arena-builder-skill/data`)
+- `FEED_TTL_SECONDS` (default: `600`)
+- `FEED_HTTP_TIMEOUT_SECONDS` (default: `10`)
+
+Operational behavior:
+
+- In Vercel (`VERCEL` env set), the app expects `FEED_BASE_URL` to be configured.
+- On feed timeout/parse/fetch errors, stale cache is served when available.
+- If feed fetch fails and no cache exists, API returns `503` with retry guidance.

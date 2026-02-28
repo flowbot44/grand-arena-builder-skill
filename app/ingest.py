@@ -453,6 +453,8 @@ def build_client() -> GrandArenaClient:
         base_url=SETTINGS.api_base_url,
         api_key=SETTINGS.api_key,
         rate_limiter=limiter,
+        timeout_seconds=SETTINGS.api_timeout_seconds,
+        retries=SETTINGS.api_retries,
     )
 
 

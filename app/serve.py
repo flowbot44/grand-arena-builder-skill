@@ -2,19 +2,25 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from datetime import date
+from typing import Any, Dict, Optional
 
-from flask import Flask, Response, abort, g, jsonify, render_template_string, request
+from flask import Flask, Response, abort, jsonify, render_template_string, request
 
-from .analytics import (
-    build_champion_match_info,
-    build_champion_history,
-    build_champion_next_matches,
-    build_non_champion_history,
-    build_non_champion_next_matches,
-)
 from .config import SETTINGS
-from .db import get_connection, init_db
+from .feed_adapter import FeedAdapter, FeedMeta, FeedUnavailableError
+
+
+def _json_with_meta(payload: Dict[str, Any], meta: Optional[FeedMeta] = None, status_code: int = 200) -> Response:
+    if meta is not None:
+        payload = dict(payload)
+        payload.update(meta.as_body())
+    response = Response(json.dumps(payload, default=str), mimetype="application/json", status=status_code)
+    if meta is not None:
+        for key, value in meta.as_headers().items():
+            response.headers[key] = value
+    return response
 
 INDEX_TEMPLATE = """
 <!doctype html>
@@ -344,75 +350,49 @@ NON_CHAMPION_DETAIL_TEMPLATE = """
 
 
 def _json_response(payload: dict) -> Response:
-    return Response(json.dumps(payload, default=str), mimetype="application/json")
+    return _json_with_meta(payload)
 
 
-def create_app(db_path: str = SETTINGS.db_path) -> Flask:
+def create_app() -> Flask:
     app = Flask(__name__)
-    bootstrap_conn = get_connection(db_path)
-    init_db(bootstrap_conn)
-    bootstrap_conn.close()
-
-    def get_db():
-        conn = g.get("db_conn")
-        if conn is None:
-            conn = get_connection(db_path)
-            g.db_conn = conn
-        return conn
-
-    @app.teardown_appcontext
-    def close_db(_exc):
-        conn = g.pop("db_conn", None)
-        if conn is not None:
-            conn.close()
+    if os.getenv("VERCEL") and not SETTINGS.feed_base_url:
+        raise RuntimeError("FEED_BASE_URL is required in Vercel environment")
+    feed_adapter = FeedAdapter(
+        base_url=SETTINGS.feed_base_url,
+        ttl_seconds=SETTINGS.feed_ttl_seconds,
+        timeout_seconds=SETTINGS.feed_http_timeout_seconds,
+    )
+    def _feed_error(exc: FeedUnavailableError) -> Response:
+        return _json_with_meta(
+            {"error": "feed_unavailable", "message": str(exc), "retry_hint": "retry in 30-60 seconds"},
+            status_code=503,
+        )
 
     @app.get("/")
     def index() -> str:
-        conn = get_db()
-        today = date.today()
-        window_start = today.isoformat()
-        window_end = date.fromordinal(today.toordinal() + SETTINGS.lookahead_days).isoformat()
-
-        rows = conn.execute(
-            """
-            SELECT
-                c.token_id,
-                c.name,
-                ROUND(COALESCE(cm.win_pct, 0.0), 4) AS win_pct,
-                ROUND(COALESCE(cm.avg_points, 0.0), 4) AS avg_points,
-                (
-                    SELECT COUNT(*)
-                    FROM matches m
-                    JOIN match_players mp ON mp.match_id = m.match_id
-                    WHERE mp.token_id = c.token_id
-                      AND m.state = 'scheduled'
-                      AND m.match_date >= ?
-                      AND m.match_date <= ?
-                ) AS next_count
-            FROM champions c
-            LEFT JOIN champion_metrics cm ON cm.token_id = c.token_id
-            ORDER BY win_pct DESC, c.token_id ASC
-            """,
-            (window_start, window_end),
-        ).fetchall()
-        return render_template_string(
-            INDEX_TEMPLATE,
-            rows=rows,
-            lookahead_days=SETTINGS.lookahead_days,
-            window_start=window_start,
-            window_end=window_end,
-        )
+        try:
+            feed_payload, _meta = feed_adapter.champion_rows()
+            return render_template_string(
+                INDEX_TEMPLATE,
+                rows=feed_payload["rows"],
+                lookahead_days=feed_payload["lookahead_days"],
+                window_start=feed_payload["window_start"],
+                window_end=feed_payload["window_end"],
+            )
+        except FeedUnavailableError:
+            abort(503)
 
     @app.get("/champions/<int:token_id>")
     def champion_detail(token_id: int) -> str:
-        conn = get_db()
         tab = request.args.get("tab", "history")
         if tab not in {"history", "lookahead", "match-info"}:
             tab = "history"
-
-        history_payload = build_champion_history(conn, token_id)
-        lookahead_payload = build_champion_next_matches(conn, token_id, limit=10, lookahead_days=SETTINGS.lookahead_days)
-        match_info_payload = build_champion_match_info(conn, token_id)
+        try:
+            history_payload, _ = feed_adapter.champion_history(token_id)
+            lookahead_payload, _ = feed_adapter.champion_next_matches(token_id, limit=10, lookahead_days=SETTINGS.lookahead_days)
+            match_info_payload, _ = feed_adapter.champion_match_info(token_id)
+        except FeedUnavailableError:
+            abort(503)
         if history_payload["champion"] is None:
             abort(404)
         return render_template_string(
@@ -426,69 +406,20 @@ def create_app(db_path: str = SETTINGS.db_path) -> Flask:
 
     @app.get("/non-champions")
     def non_champions_index() -> str:
-        conn = get_db()
         page = max(1, int(request.args.get("page", "1")))
         per_page = int(request.args.get("per_page", "100"))
         per_page = max(10, min(per_page, 500))
         offset = (page - 1) * per_page
-
-        total_items = conn.execute(
-            """
-            SELECT COUNT(*) AS c
-            FROM (
-              SELECT token_id
-              FROM match_players
-              WHERE is_champion = 0
-              GROUP BY token_id
-            )
-            """
-        ).fetchone()["c"]
-
-        rows = conn.execute(
-            """
-            WITH perf AS (
-                SELECT
-                    mp.token_id,
-                    MAX(mp.name) AS name,
-                    COUNT(*) AS games,
-                    SUM(CASE WHEN m.team_won = mp.team THEN 1 ELSE 0 END) AS wins,
-                    AVG(COALESCE(p.deposits, msp.deposits, 0)) AS avg_deposits,
-                    AVG(COALESCE(p.eliminations, msp.eliminations, 0)) AS avg_eliminations,
-                    AVG(COALESCE(p.wart_distance, msp.wart_distance, 0)) AS avg_wart
-                FROM match_players mp
-                JOIN matches m ON m.match_id = mp.match_id
-                LEFT JOIN match_stats_players msp ON msp.match_id = m.match_id AND msp.token_id = mp.token_id
-                LEFT JOIN (
-                    SELECT
-                        match_id,
-                        token_id,
-                        AVG(deposits) AS deposits,
-                        AVG(eliminations) AS eliminations,
-                        AVG(wart_distance) AS wart_distance
-                    FROM performances
-                    GROUP BY match_id, token_id
-                ) p ON p.match_id = m.match_id AND p.token_id = mp.token_id
-                WHERE mp.is_champion = 0
-                  AND m.state = 'scored'
-                GROUP BY mp.token_id
-            )
-            SELECT
-                token_id,
-                name,
-                games,
-                CASE WHEN games > 0 THEN CAST(wins AS REAL) / games ELSE 0.0 END AS win_pct,
-                ((avg_deposits * 50.0) + (avg_eliminations * 80.0) + (CAST(avg_wart / 80.0 AS INTEGER) * 45.0) + (CASE WHEN games > 0 THEN (CAST(wins AS REAL) / games) * 300.0 ELSE 0.0 END)) AS avg_points
-            FROM perf
-            ORDER BY games DESC, token_id ASC
-            LIMIT ? OFFSET ?
-            """,
-            (per_page, offset),
-        ).fetchall()
-
+        try:
+            rows, _meta = feed_adapter.non_champion_rows()
+        except FeedUnavailableError:
+            abort(503)
+        total_items = len(rows)
         total_pages = max(1, (total_items + per_page - 1) // per_page)
+        page_rows = rows[offset : offset + per_page]
         return render_template_string(
             NON_CHAMPIONS_TEMPLATE,
-            rows=rows,
+            rows=page_rows,
             page=page,
             per_page=per_page,
             total_pages=total_pages,
@@ -497,12 +428,14 @@ def create_app(db_path: str = SETTINGS.db_path) -> Flask:
 
     @app.get("/non-champions/<int:token_id>")
     def non_champion_detail(token_id: int) -> str:
-        conn = get_db()
         tab = request.args.get("tab", "history")
         if tab not in {"history", "lookahead"}:
             tab = "history"
-        history_payload = build_non_champion_history(conn, token_id)
-        lookahead_payload = build_non_champion_next_matches(conn, token_id, limit=10, lookahead_days=SETTINGS.lookahead_days)
+        try:
+            history_payload, _ = feed_adapter.non_champion_history(token_id)
+            lookahead_payload, _ = feed_adapter.non_champion_next_matches(token_id, limit=10, lookahead_days=SETTINGS.lookahead_days)
+        except FeedUnavailableError:
+            abort(503)
         if history_payload["player"] is None:
             abort(404)
         return render_template_string(
@@ -515,133 +448,153 @@ def create_app(db_path: str = SETTINGS.db_path) -> Flask:
 
     @app.get("/api/champions")
     def champions_json() -> Response:
-        conn = get_db()
-        rows = conn.execute(
-            """
-            SELECT
-                c.token_id,
-                c.name,
-                COALESCE(cm.matches_played, 0) AS matches_played,
-                COALESCE(cm.wins, 0) AS wins,
-                COALESCE(cm.win_pct, 0.0) AS win_pct,
-                COALESCE(cm.avg_points, 0.0) AS avg_points
-            FROM champions c
-            LEFT JOIN champion_metrics cm ON cm.token_id = c.token_id
-            ORDER BY win_pct DESC, c.token_id ASC
-            """
-        ).fetchall()
-
-        payload = {
-            "lookahead_days": SETTINGS.lookahead_days,
-            "window_start": date.today().isoformat(),
-            "window_end": date.fromordinal(date.today().toordinal() + SETTINGS.lookahead_days).isoformat(),
-            "data": [dict(r) for r in rows],
-        }
-        return _json_response(payload)
+        try:
+            feed_payload, meta = feed_adapter.champion_rows()
+            payload = {
+                "source": "github_feed",
+                "lookahead_days": feed_payload["lookahead_days"],
+                "window_start": feed_payload["window_start"],
+                "window_end": feed_payload["window_end"],
+                "data": [
+                    {
+                        "token_id": row["token_id"],
+                        "name": row["name"],
+                        "matches_played": row["matches_played"],
+                        "wins": row["wins"],
+                        "win_pct": row["win_pct"],
+                        "avg_points": row["avg_points"],
+                    }
+                    for row in feed_payload["rows"]
+                ],
+            }
+            return _json_with_meta(payload, meta)
+        except FeedUnavailableError as exc:
+            return _feed_error(exc)
 
     @app.get("/api/non-champions")
     def non_champions_json() -> Response:
-        conn = get_db()
         page = max(1, int(request.args.get("page", "1")))
         per_page = int(request.args.get("per_page", "100"))
         per_page = max(10, min(per_page, 500))
         offset = (page - 1) * per_page
-        total_items = conn.execute(
-            """
-            SELECT COUNT(*) AS c
-            FROM (
-              SELECT token_id
-              FROM match_players
-              WHERE is_champion = 0
-              GROUP BY token_id
-            )
-            """
-        ).fetchone()["c"]
-        rows = conn.execute(
-            """
-            SELECT token_id, MAX(name) AS name
-            FROM match_players
-            WHERE is_champion = 0
-            GROUP BY token_id
-            ORDER BY token_id ASC
-            LIMIT ? OFFSET ?
-            """,
-            (per_page, offset),
-        ).fetchall()
-        payload = {
-            "page": page,
-            "per_page": per_page,
-            "total_items": total_items,
-            "total_pages": max(1, (total_items + per_page - 1) // per_page),
-            "data": [dict(r) for r in rows],
-        }
-        return _json_response(payload)
+        try:
+            rows, meta = feed_adapter.non_champion_rows()
+            total_items = len(rows)
+            page_rows = rows[offset : offset + per_page]
+            payload = {
+                "source": "github_feed",
+                "page": page,
+                "per_page": per_page,
+                "total_items": total_items,
+                "total_pages": max(1, (total_items + per_page - 1) // per_page),
+                "data": page_rows,
+            }
+            return _json_with_meta(payload, meta)
+        except FeedUnavailableError as exc:
+            return _feed_error(exc)
 
     @app.get("/api/champions/<int:token_id>/next-matches")
     def champion_next_matches_json(token_id: int) -> Response:
-        conn = get_db()
         limit = int(request.args.get("limit", "10"))
-        payload = build_champion_next_matches(conn, token_id, limit=limit, lookahead_days=SETTINGS.lookahead_days)
+        try:
+            payload, meta = feed_adapter.champion_next_matches(token_id, limit=limit, lookahead_days=SETTINGS.lookahead_days)
+        except FeedUnavailableError as exc:
+            return _feed_error(exc)
         if payload["champion"] is None:
             return jsonify({"error": "not_found"}), 404
-        return _json_response(payload)
+        return _json_with_meta(payload, meta)
 
     @app.get("/api/champions/<int:token_id>/history")
     def champion_history_json(token_id: int) -> Response:
-        conn = get_db()
-        payload = build_champion_history(conn, token_id)
-        if payload["champion"] is None:
-            return jsonify({"error": "not_found"}), 404
-        return _json_response(payload)
+        try:
+            payload, meta = feed_adapter.champion_history(token_id)
+            if payload["champion"] is None:
+                return jsonify({"error": "not_found"}), 404
+            return _json_with_meta(payload, meta)
+        except FeedUnavailableError as exc:
+            return _feed_error(exc)
 
     @app.get("/api/champions/<int:token_id>/match-info")
     def champion_match_info_json(token_id: int) -> Response:
-        conn = get_db()
-        payload = build_champion_match_info(conn, token_id)
+        try:
+            payload, meta = feed_adapter.champion_match_info(token_id)
+        except FeedUnavailableError as exc:
+            return _feed_error(exc)
         if payload["champion"] is None:
             return jsonify({"error": "not_found"}), 404
-        return _json_response(payload)
+        return _json_with_meta(payload, meta)
 
     @app.get("/api/non-champions/<int:token_id>/history")
     def non_champion_history_json(token_id: int) -> Response:
-        conn = get_db()
-        payload = build_non_champion_history(conn, token_id)
-        if payload["player"] is None:
-            return jsonify({"error": "not_found"}), 404
-        return _json_response(payload)
+        try:
+            payload, meta = feed_adapter.non_champion_history(token_id)
+            if payload["player"] is None:
+                return jsonify({"error": "not_found"}), 404
+            return _json_with_meta(payload, meta)
+        except FeedUnavailableError as exc:
+            return _feed_error(exc)
 
     @app.get("/api/non-champions/<int:token_id>/next-matches")
     def non_champion_next_matches_json(token_id: int) -> Response:
-        conn = get_db()
         limit = int(request.args.get("limit", "10"))
-        payload = build_non_champion_next_matches(conn, token_id, limit=limit, lookahead_days=SETTINGS.lookahead_days)
+        try:
+            payload, meta = feed_adapter.non_champion_next_matches(token_id, limit=limit, lookahead_days=SETTINGS.lookahead_days)
+        except FeedUnavailableError as exc:
+            return _feed_error(exc)
         if payload["player"] is None:
             return jsonify({"error": "not_found"}), 404
-        return _json_response(payload)
+        return _json_with_meta(payload, meta)
+
+    @app.get("/api/cumulative/current-totals")
+    def cumulative_current_totals_json() -> Response:
+        try:
+            rows, meta = feed_adapter.get_current_totals()
+            return _json_with_meta({"source": "github_feed", "data": rows}, meta)
+        except FeedUnavailableError as exc:
+            return _feed_error(exc)
 
     @app.get("/api/system/status")
     def system_status() -> Response:
-        conn = get_db()
-        run = conn.execute(
-            """
-            SELECT run_id, started_at, finished_at, status
-            FROM ingestion_runs
-            ORDER BY run_id DESC
-            LIMIT 1
-            """
-        ).fetchone()
-        payload = {
-            "lookahead_days": SETTINGS.lookahead_days,
-            "latest_run": dict(run) if run else None,
-        }
-        return _json_response(payload)
+        try:
+            latest, latest_meta = feed_adapter.get_latest_manifest()
+            status, status_meta = feed_adapter.get_status()
+            available_dates = latest.get("available_dates", [])
+            meta = FeedMeta(
+                data_generated_at=status.get("generated_at_utc", latest.get("generated_at_utc")),
+                cache_age_seconds=max(latest_meta.cache_age_seconds, status_meta.cache_age_seconds),
+                stale_data=latest_meta.stale_data or status_meta.stale_data,
+            )
+            payload = {
+                "source": "github_feed",
+                "feed_base_url": SETTINGS.feed_base_url,
+                "generated_at_utc": status.get("generated_at_utc", latest.get("generated_at_utc")),
+                "window_days": latest.get("window_days", status.get("window_days", 7)),
+                "lookahead_days": latest.get("lookahead_days", status.get("lookahead_days", SETTINGS.lookahead_days)),
+                "window_start": status.get(
+                    "window_start",
+                    available_dates[0] if available_dates else date.today().isoformat(),
+                ),
+                "window_end": status.get(
+                    "window_end",
+                    available_dates[-1] if available_dates else date.today().isoformat(),
+                ),
+                "cumulative_window_end": status.get(
+                    "cumulative_window_end",
+                    available_dates[-1] if available_dates else date.today().isoformat(),
+                ),
+                "raw_dates": status.get("raw_dates", available_dates),
+                "latest_ingestion_run": status.get("latest_ingestion_run"),
+                "latest_run": status.get("latest_ingestion_run"),
+            }
+            return _json_with_meta(payload, meta)
+        except FeedUnavailableError as exc:
+            return _feed_error(exc)
 
     return app
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run local Flask app for champion matchup insights")
-    parser.add_argument("--db", default=SETTINGS.db_path, help="SQLite DB path")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", default=5000, type=int)
     return parser.parse_args()
@@ -649,7 +602,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    app = create_app(db_path=args.db)
+    app = create_app()
     app.run(host=args.host, port=args.port)
     return 0
 

@@ -65,6 +65,10 @@ class GrandArenaClient:
         self.timeout_seconds = timeout_seconds
         self.retries = retries
 
+    @staticmethod
+    def _is_retryable_http_status(code: int) -> bool:
+        return code in {408, 429} or 500 <= code < 600
+
     def _request_json(self, path: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         if not self.api_key:
             raise ApiError("Missing GRANDARENA_API_KEY")
@@ -92,12 +96,18 @@ class GrandArenaClient:
                     return json.loads(raw)
             except HTTPError as exc:
                 code = exc.code
-                if (code == 429 or 500 <= code < 600) and attempt < self.retries:
+                if self._is_retryable_http_status(code) and attempt < self.retries:
                     time.sleep(backoff)
                     backoff *= 2.0
                     continue
                 body = exc.read().decode("utf-8", errors="replace") if hasattr(exc, "read") else ""
                 raise ApiError(f"HTTP {code} for {url}: {body[:300]}") from exc
+            except TimeoutError as exc:
+                if attempt < self.retries:
+                    time.sleep(backoff)
+                    backoff *= 2.0
+                    continue
+                raise ApiError(f"Timeout for {url}: {exc}") from exc
             except URLError as exc:
                 if attempt < self.retries:
                     time.sleep(backoff)
