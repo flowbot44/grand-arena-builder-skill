@@ -279,6 +279,7 @@ Key routes:
 - `GET /api/non-champions/<token_id>/next-matches?limit=10`
 - `GET /api/system/status`
 - `GET /api/cumulative/current-totals`
+- `GET /api/moki-totals`
 
 Response metadata includes:
 
@@ -325,6 +326,7 @@ Expected public URLs (replace `<user>`/`<repo>`):
 - `https://<user>.github.io/<repo>/data/cumulative/latest.json`
 - `https://<user>.github.io/<repo>/data/cumulative/current_totals.json.gz`
 - `https://<user>.github.io/<repo>/data/cumulative/daily_totals_YYYY-MM-DD.json.gz`
+- `https://<user>.github.io/<repo>/data/moki_totals.json`
 
 ### Scheduled publish flow
 
@@ -336,6 +338,7 @@ Workflow file: `.github/workflows/publish-feed.yml`
 - Runs:
   - `python -m app.ingest hourly --db state/grandarena.db`
   - `python -m app.maintenance prune --db state/grandarena.db --keep-days 7`
+  - `python -m app.export_moki_totals --out exports/data/moki_totals.json`
   - `python -m app.export_feed --db state/grandarena.db --out exports/data --days 7 --lookahead-days 1 --mutable-days-back 1 --mutable-days-forward 1 --cumulative-mutable-days-back 1`
 - Verifies `exports/data/cumulative/current_totals.json.gz` is non-empty before deploy.
 - Publishes `exports/` to GitHub Pages.

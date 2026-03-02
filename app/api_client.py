@@ -4,7 +4,7 @@ import json
 import time
 from collections import deque
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -131,6 +131,23 @@ class GrandArenaClient:
                 "order": "asc",
             },
         )
+
+    def list_mokis(self, page: int = 1, limit: int = 100) -> Dict[str, Any]:
+        return self._request_json(
+            "/api/v1/mokis",
+            {
+                "page": page,
+                "limit": limit,
+                "sort": "tokenId",
+                "order": "asc",
+            },
+        )
+
+    def get_mokis_bulk(self, token_ids: List[int]) -> Dict[str, Any]:
+        if not token_ids:
+            return {"data": []}
+        ids_csv = ",".join(str(token_id) for token_id in token_ids)
+        return self._request_json("/api/v1/mokis/bulk", {"ids": ids_csv})
 
     def get_match_stats(self, match_id: str) -> Dict[str, Any]:
         return self._request_json(f"/api/v1/matches/{match_id}/stats")

@@ -553,6 +553,21 @@ def create_app() -> Flask:
         except FeedUnavailableError as exc:
             return _feed_error(exc)
 
+    @app.get("/api/moki-totals")
+    def moki_totals_json() -> Response:
+        try:
+            payload, meta = feed_adapter.get_moki_totals()
+            return _json_with_meta(
+                {
+                    "source": "github_feed",
+                    "count": payload.get("count", len(payload.get("data") or [])),
+                    "data": payload.get("data", []),
+                },
+                meta,
+            )
+        except FeedUnavailableError as exc:
+            return _feed_error(exc)
+
     @app.get("/api/system/status")
     def system_status() -> Response:
         try:

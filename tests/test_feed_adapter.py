@@ -103,6 +103,36 @@ class FeedAdapterTests(unittest.TestCase):
         self.assertTrue(meta.stale_data)
         self.assertGreaterEqual(meta.cache_age_seconds, 0)
 
+    def test_fetch_moki_totals_from_latest_manifest(self) -> None:
+        calls = []
+
+        def fake_urlopen(url, timeout=0):
+            calls.append(url)
+            if url.endswith("/latest.json"):
+                return _FakeHTTPResponse(
+                    json.dumps(
+                        {
+                            "generated_at_utc": "2026-02-27T00:00:00+00:00",
+                            "window_days": 7,
+                            "available_dates": ["2026-02-26"],
+                            "partitions": [],
+                            "moki_totals": {"url": "moki_totals.json"},
+                        }
+                    ).encode("utf-8")
+                )
+            if url.endswith("/moki_totals.json"):
+                return _FakeHTTPResponse(
+                    json.dumps({"count": 1, "data": [{"tokenId": 807, "name": "T807"}]}).encode("utf-8")
+                )
+            raise AssertionError(f"unexpected URL: {url}")
+
+        adapter = FeedAdapter(base_url="https://example.com/data", ttl_seconds=600, timeout_seconds=1)
+        with patch("app.feed_adapter.urlopen", side_effect=fake_urlopen):
+            payload, _meta = adapter.get_moki_totals()
+        self.assertEqual(payload["count"], 1)
+        self.assertEqual(payload["data"][0]["tokenId"], 807)
+        self.assertEqual(len(calls), 2)
+
 
 class FeedRoutesTests(unittest.TestCase):
     def test_api_routes_use_feed_without_db(self) -> None:
@@ -124,6 +154,7 @@ class FeedRoutesTests(unittest.TestCase):
                                     "match_count": 1,
                                 }
                             ],
+                            "moki_totals": {"url": "moki_totals.json"},
                         }
                     ).encode("utf-8")
                 )
@@ -159,6 +190,10 @@ class FeedRoutesTests(unittest.TestCase):
                         ]
                     )
                 )
+            if url.endswith("/moki_totals.json"):
+                return _FakeHTTPResponse(
+                    json.dumps({"count": 1, "data": [{"tokenId": 807, "name": "T807"}]}).encode("utf-8")
+                )
             raise AssertionError(f"unexpected URL: {url}")
 
         with patch("app.feed_adapter.urlopen", side_effect=fake_urlopen):
@@ -176,6 +211,12 @@ class FeedRoutesTests(unittest.TestCase):
                 self.assertEqual(status_resp.status_code, 200)
                 status_body = status_resp.get_json()
                 self.assertEqual(status_body["source"], "github_feed")
+
+                moki_resp = client.get("/api/moki-totals")
+                self.assertEqual(moki_resp.status_code, 200)
+                moki_body = moki_resp.get_json()
+                self.assertEqual(moki_body["source"], "github_feed")
+                self.assertEqual(moki_body["count"], 1)
 
 
 if __name__ == "__main__":

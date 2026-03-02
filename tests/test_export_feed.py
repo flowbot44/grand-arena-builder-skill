@@ -117,6 +117,22 @@ class ExportFeedTests(unittest.TestCase):
         daily_latest = _read_gzip_json(self.out_dir / "cumulative" / "daily_totals_2026-02-26.json.gz")
         self.assertEqual(current_totals, daily_latest)
 
+    def test_export_includes_moki_totals_metadata_when_present(self) -> None:
+        self._insert_seed_data()
+        self.out_dir.mkdir(parents=True, exist_ok=True)
+        (self.out_dir / "moki_totals.json").write_text(
+            json.dumps({"count": 2, "data": [{"tokenId": 111}, {"tokenId": 222}]}),
+            encoding="utf-8",
+        )
+
+        export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
+
+        latest = _read_json(self.out_dir / "latest.json")
+        self.assertIn("moki_totals", latest)
+        self.assertEqual(latest["moki_totals"]["url"], "moki_totals.json")
+        self.assertEqual(latest["moki_totals"]["count"], 2)
+        self.assertEqual(len(latest["moki_totals"]["sha256"]), 64)
+
 
 if __name__ == "__main__":
     unittest.main()

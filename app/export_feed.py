@@ -69,6 +69,21 @@ def _read_gzip_json(path: Path) -> Any:
         return json.load(fh)
 
 
+def _moki_totals_entry_from_file(path: Path) -> Dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    count = 0
+    if isinstance(payload, dict):
+        data = payload.get("data")
+        if isinstance(data, list):
+            count = len(data)
+    return {
+        "url": "moki_totals.json",
+        "sha256": _sha256_hex(path),
+        "bytes": path.stat().st_size,
+        "count": count,
+    }
+
+
 def _raw_partition_entry_from_file(day_iso: str, path: Path) -> Dict[str, Any]:
     payload = _read_gzip_json(path)
     match_count = len(payload) if isinstance(payload, list) else 0
@@ -330,6 +345,9 @@ def export_feed(
         "available_dates": raw_calendar_dates,
         "partitions": partition_entries,
     }
+    moki_totals_path = out_dir / "moki_totals.json"
+    if moki_totals_path.exists():
+        raw_manifest["moki_totals"] = _moki_totals_entry_from_file(moki_totals_path)
     _write_json(out_dir / "latest.json", raw_manifest)
 
     prior_cumulative_manifest = _read_json_if_exists(out_dir / "cumulative" / "latest.json") or {}

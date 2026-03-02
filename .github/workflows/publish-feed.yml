@@ -83,6 +83,9 @@ jobs:
       - name: Prune Rolling Window
         run: python -m app.maintenance prune --db state/grandarena.db --keep-days 7
 
+      - name: Export Moki Totals
+        run: python -m app.export_moki_totals --out exports/data/moki_totals.json
+
       - name: Export Static Feed
         run: >
           python -m app.export_feed

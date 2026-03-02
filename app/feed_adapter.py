@@ -95,6 +95,15 @@ def _validate_current_totals(payload: Any) -> List[Dict[str, Any]]:
     return payload
 
 
+def _validate_moki_totals(payload: Any) -> Dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise FeedFormatError("moki totals payload must be an object")
+    data = payload.get("data")
+    if not isinstance(data, list):
+        raise FeedFormatError("moki totals payload missing data array")
+    return payload
+
+
 class FeedAdapter:
     def __init__(
         self,
@@ -228,6 +237,21 @@ class FeedAdapter:
             generated_at_extractor=lambda _d: cumulative_meta.data_generated_at,
         )
         return rows, meta
+
+    def get_moki_totals(self) -> Tuple[Dict[str, Any], FeedMeta]:
+        latest, latest_meta = self.get_latest_manifest()
+        moki_totals_meta = latest.get("moki_totals") if isinstance(latest, dict) else None
+        rel_url = "moki_totals.json"
+        if isinstance(moki_totals_meta, dict) and moki_totals_meta.get("url"):
+            rel_url = str(moki_totals_meta["url"])
+        payload, meta = self._cached_fetch(
+            cache_key="moki_totals",
+            url=urljoin(f"{self.base_url}/", rel_url),
+            gzip_json=False,
+            validator=_validate_moki_totals,
+            generated_at_extractor=lambda _d: latest_meta.data_generated_at,
+        )
+        return payload, meta
 
     def _all_partitions_payloads(self) -> Tuple[List[Dict[str, Any]], FeedMeta]:
         latest, latest_meta = self.get_latest_manifest()
