@@ -332,7 +332,7 @@ Expected public URLs (replace `<user>`/`<repo>`):
 
 Workflow file: `.github/workflows/publish-feed.yml`
 
-- Triggered every 2 hours (`cron: "0 */2 * * *"`, UTC) and via manual dispatch.
+- Triggered every 4 hours (`cron: "0 */4 * * *"`, UTC) and via manual dispatch.
 - Restores the last DB state artifact (`state/grandarena.db.gz`) when available.
 - Optionally seeds the DB from `SEED_DB_URL` if no prior DB artifact exists.
 - Runs:

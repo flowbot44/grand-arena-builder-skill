@@ -2,7 +2,7 @@ name: Publish Data Feed
 
 on:
   schedule:
-    - cron: '0 */2 * * *'
+    - cron: '0 */4 * * *'
   workflow_dispatch:
 
 permissions:
