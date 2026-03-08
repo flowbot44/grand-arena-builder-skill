@@ -25,6 +25,8 @@ jobs:
       FETCH_MATCH_PERFORMANCES: "true"
       LOOKBEHIND_DAYS: "3"
       LOOKAHEAD_DAYS: "1"
+      REQUEST_LIMIT_PER_MINUTE: "600"
+      MIN_REQUEST_INTERVAL_SECONDS: "0.10"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
