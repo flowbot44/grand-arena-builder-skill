@@ -13,6 +13,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from .config import SETTINGS
 from .db import get_connection, init_db
+from .time_utils import utc_today_iso
 
 
 def utc_now_iso() -> str:
@@ -518,7 +519,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="If set, only refresh cumulative files from today-N days onward; older cumulative files are reused.",
     )
-    parser.add_argument("--today", default=date.today().isoformat(), help="UTC date override YYYY-MM-DD")
+    parser.add_argument("--today", default=utc_today_iso(), help="UTC date override YYYY-MM-DD")
     return parser.parse_args()
 
 

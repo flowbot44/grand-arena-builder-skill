@@ -12,6 +12,8 @@ from urllib.error import URLError
 from urllib.parse import urljoin
 from urllib.request import urlopen
 
+from .time_utils import utc_today
+
 logger = logging.getLogger(__name__)
 
 
@@ -383,7 +385,7 @@ class FeedAdapter:
 
         result_rows.sort(key=lambda r: (-r["win_pct"], r["token_id"]))
         available_dates = latest.get("available_dates") or []
-        today_iso = date.today().isoformat()
+        today_iso = utc_today().isoformat()
         return (
             {
                 "lookahead_days": int(latest.get("lookahead_days", 0)),
@@ -564,9 +566,10 @@ class FeedAdapter:
     def champion_next_matches(self, token_id: int, *, limit: int = 10, lookahead_days: int = 2) -> Tuple[Dict[str, Any], FeedMeta]:
         latest, latest_meta = self.get_latest_manifest()
         available_dates = list(latest.get("available_dates") or [])
-        today_iso = date.today().isoformat()
+        today = utc_today()
+        today_iso = today.isoformat()
         window_start = today_iso
-        window_end = date.fromordinal(date.today().toordinal() + lookahead_days).isoformat()
+        window_end = date.fromordinal(today.toordinal() + lookahead_days).isoformat()
         window_dates = [d for d in available_dates if window_start <= d <= window_end]
         payload_rows, part_meta = self._payloads_for_dates(window_dates)
         stale = latest_meta.stale_data or part_meta.stale_data
@@ -686,9 +689,10 @@ class FeedAdapter:
     def non_champion_next_matches(self, token_id: int, *, limit: int = 10, lookahead_days: int = 2) -> Tuple[Dict[str, Any], FeedMeta]:
         latest, latest_meta = self.get_latest_manifest()
         available_dates = list(latest.get("available_dates") or [])
-        today_iso = date.today().isoformat()
+        today = utc_today()
+        today_iso = today.isoformat()
         window_start = today_iso
-        window_end = date.fromordinal(date.today().toordinal() + lookahead_days).isoformat()
+        window_end = date.fromordinal(today.toordinal() + lookahead_days).isoformat()
         window_dates = [d for d in available_dates if window_start <= d <= window_end]
         payload_rows, part_meta = self._payloads_for_dates(window_dates)
         stale = latest_meta.stale_data or part_meta.stale_data

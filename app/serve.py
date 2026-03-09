@@ -10,6 +10,7 @@ from flask import Flask, Response, abort, jsonify, render_template_string, reque
 
 from .config import SETTINGS
 from .feed_adapter import FeedAdapter, FeedMeta, FeedUnavailableError
+from .time_utils import utc_today_iso
 
 
 def _json_with_meta(payload: Dict[str, Any], meta: Optional[FeedMeta] = None, status_code: int = 200) -> Response:
@@ -587,15 +588,15 @@ def create_app() -> Flask:
                 "lookahead_days": latest.get("lookahead_days", status.get("lookahead_days", SETTINGS.lookahead_days)),
                 "window_start": status.get(
                     "window_start",
-                    available_dates[0] if available_dates else date.today().isoformat(),
+                    available_dates[0] if available_dates else utc_today_iso(),
                 ),
                 "window_end": status.get(
                     "window_end",
-                    available_dates[-1] if available_dates else date.today().isoformat(),
+                    available_dates[-1] if available_dates else utc_today_iso(),
                 ),
                 "cumulative_window_end": status.get(
                     "cumulative_window_end",
-                    available_dates[-1] if available_dates else date.today().isoformat(),
+                    available_dates[-1] if available_dates else utc_today_iso(),
                 ),
                 "raw_dates": status.get("raw_dates", available_dates),
                 "latest_ingestion_run": status.get("latest_ingestion_run"),

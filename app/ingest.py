@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sqlite3
 from dataclasses import dataclass
@@ -11,6 +12,7 @@ from .analytics import recompute_champion_metrics
 from .api_client import GrandArenaClient, RateLimiter
 from .config import SETTINGS
 from .db import get_connection, init_db, transaction
+from .time_utils import utc_today, utc_today_iso
 
 
 def utc_now_iso() -> str:
@@ -51,25 +53,53 @@ class IngestionService:
         self._champion_token_ids: set[int] = set()
 
     def seed_champions(self) -> int:
-        with open(self.champions_path, "r", encoding="utf-8") as fh:
-            champions = json.load(fh)
+        raw = self._read_champions_file()
+        champions_hash = hashlib.sha256(raw).hexdigest()
+        stored_hash = self._load_cursor("champions:sha256")
+        champion_count = self.conn.execute("SELECT COUNT(*) AS c FROM champions").fetchone()["c"]
+        if stored_hash == champions_hash and champion_count > 0:
+            rows = self.conn.execute("SELECT token_id FROM champions").fetchall()
+            self._champion_token_ids = {int(r["token_id"]) for r in rows}
+            return len(self._champion_token_ids)
+
+        champions = json.loads(raw.decode("utf-8"))
 
         now = utc_now_iso()
         self._champion_token_ids = {int(row["id"]) for row in champions}
         with transaction(self.conn):
-            for row in champions:
+            self.conn.executemany(
+                """
+                INSERT INTO champions (token_id, name, traits_json, updated_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(token_id) DO UPDATE SET
+                    name = excluded.name,
+                    traits_json = excluded.traits_json,
+                    updated_at = excluded.updated_at
+                """,
+                [
+                    (
+                        int(row["id"]),
+                        row["name"],
+                        json.dumps(row.get("traits", []), separators=(",", ":")),
+                        now,
+                    )
+                    for row in champions
+                ],
+            )
+            champion_ids = tuple(int(row["id"]) for row in champions)
+            if champion_ids:
                 self.conn.execute(
-                    """
-                    INSERT INTO champions (token_id, name, traits_json, updated_at)
-                    VALUES (?, ?, ?, ?)
-                    ON CONFLICT(token_id) DO UPDATE SET
-                        name = excluded.name,
-                        traits_json = excluded.traits_json,
-                        updated_at = excluded.updated_at
-                    """,
-                    (int(row["id"]), row["name"], json.dumps(row.get("traits", []), separators=(",", ":")), now),
+                    "DELETE FROM champions WHERE token_id NOT IN ({})".format(",".join("?" for _ in champion_ids)),
+                    champion_ids,
                 )
+            else:
+                self.conn.execute("DELETE FROM champions")
+        self._store_cursor("champions:sha256", champions_hash)
         return len(champions)
+
+    def _read_champions_file(self) -> bytes:
+        with open(self.champions_path, "rb") as fh:
+            return fh.read()
 
     def _is_champion(self, token_id: int) -> int:
         if self._champion_token_ids:
@@ -95,6 +125,12 @@ class IngestionService:
         row = self.conn.execute("SELECT 1 FROM performances WHERE match_id = ? LIMIT 1", (match_id,)).fetchone()
         return row is not None
 
+    def _load_cursor(self, key: str) -> str:
+        row = self.conn.execute("SELECT value FROM api_cursors WHERE key = ?", (key,)).fetchone()
+        if not row:
+            return ""
+        return str(row["value"] or "")
+
     def _upsert_match(self, match: Dict[str, Any], now: str) -> bool:
         existing = self.conn.execute(
             "SELECT state, updated_at FROM matches WHERE match_id = ?",
@@ -103,6 +139,11 @@ class IngestionService:
 
         result = match.get("result") or {}
         updated = match.get("updatedAt") or now
+        current_state = match.get("state") or "scheduled"
+        if existing and existing["state"] == current_state and existing["updated_at"] == updated:
+            self.conn.execute("UPDATE matches SET last_seen_at = ? WHERE match_id = ?", (now, match["id"]))
+            return False
+
         with transaction(self.conn):
             self.conn.execute(
                 """
@@ -124,7 +165,7 @@ class IngestionService:
                     match["id"],
                     match.get("gameType", "mokiMayhem"),
                     match.get("matchDate") or "",
-                    match.get("state") or "scheduled",
+                    current_state,
                     1 if match.get("isBye") else 0,
                     result.get("teamWon"),
                     result.get("winType"),
@@ -134,16 +175,12 @@ class IngestionService:
             )
 
             self.conn.execute("DELETE FROM match_players WHERE match_id = ?", (match["id"],))
+            player_rows = []
             for player in match.get("players", []):
                 token_id = int(player.get("tokenId") or 0)
                 if token_id == 0:
                     continue
-                self.conn.execute(
-                    """
-                    INSERT INTO match_players (
-                        match_id, moki_id, token_id, team, name, class, image_url, is_champion
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
+                player_rows.append(
                     (
                         match["id"],
                         player.get("mokiId") or "",
@@ -153,12 +190,21 @@ class IngestionService:
                         player.get("class"),
                         player.get("imageUrl"),
                         self._is_champion(token_id),
-                    ),
+                    )
+                )
+            if player_rows:
+                self.conn.executemany(
+                    """
+                    INSERT INTO match_players (
+                        match_id, moki_id, token_id, team, name, class, image_url, is_champion
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    player_rows,
                 )
 
         if not existing:
             return True
-        return existing["state"] != (match.get("state") or "scheduled") or existing["updated_at"] != updated
+        return existing["state"] != current_state or existing["updated_at"] != updated
 
     def _store_cursor(self, key: str, value: str) -> None:
         now = utc_now_iso()
@@ -177,19 +223,33 @@ class IngestionService:
     def sync_match_date(self, match_date: date) -> SyncResult:
         result = SyncResult()
         enrich_ids: set[str] = set()
-        max_updated_at = ""
+        cursor_key = f"matches:{match_date.isoformat()}"
+        use_cursor_cutoff = match_date < utc_today()
+        previous_cursor = self._load_cursor(cursor_key) if use_cursor_cutoff else ""
+        max_updated_at = previous_cursor
         today_iso = utc_now_iso()
 
         page = 1
         pages = 1
+        stop_paging = False
         while page <= pages:
-            payload = self.client.list_matches(match_date.isoformat(), page=page, limit=SETTINGS.api_page_limit)
+            payload = self.client.list_matches(
+                match_date.isoformat(),
+                page=page,
+                limit=SETTINGS.api_page_limit,
+                order="desc",
+            )
             items = payload.get("data", [])
             pagination = payload.get("pagination", {})
             pages = int(pagination.get("pages") or 1)
             page = int(pagination.get("page") or page)
 
             for match in items:
+                source_updated = match.get("updatedAt") or ""
+                if use_cursor_cutoff and previous_cursor and source_updated and source_updated < previous_cursor:
+                    stop_paging = True
+                    break
+
                 result.matches_seen += 1
                 if SETTINGS.champion_only_matches and not self._match_includes_champion(match):
                     continue
@@ -197,7 +257,6 @@ class IngestionService:
                 if changed:
                     result.matches_updated += 1
 
-                source_updated = match.get("updatedAt") or ""
                 if source_updated > max_updated_at:
                     max_updated_at = source_updated
 
@@ -207,6 +266,8 @@ class IngestionService:
                     if changed or not self._stats_present(match_id) or not self._performances_present(match_id):
                         enrich_ids.add(match_id)
 
+            if stop_paging:
+                break
             page += 1
 
         for match_id in enrich_ids:
@@ -218,7 +279,7 @@ class IngestionService:
             result.perf_upserts += perf_upserted
 
         result.enrich_candidates = len(enrich_ids)
-        self._store_cursor(f"matches:{match_date.isoformat()}", max_updated_at)
+        self._store_cursor(cursor_key, max_updated_at)
         return result
 
     def enrich_match_stats(self, match_id: str) -> int:
@@ -228,35 +289,21 @@ class IngestionService:
         team_won = data.get("teamWon")
         win_type = data.get("winType")
         state = data.get("state")
-        if state:
-            self.conn.execute(
-                "UPDATE matches SET state = ?, team_won = ?, win_type = ? WHERE match_id = ?",
-                (state, team_won, win_type, match_id),
-            )
-            self.conn.commit()
-
         teams = data.get("teams") or []
         upserts = 0
         with transaction(self.conn):
+            if state:
+                self.conn.execute(
+                    "UPDATE matches SET state = ?, team_won = ?, win_type = ? WHERE match_id = ?",
+                    (state, team_won, win_type, match_id),
+                )
+            stat_rows = []
             for team in teams:
                 for player in team.get("players", []):
                     token_id = player.get("tokenId")
                     if token_id is None:
                         continue
-                    self.conn.execute(
-                        """
-                        INSERT INTO match_stats_players (
-                            match_id, token_id, team, won, points,
-                            eliminations, deposits, wart_distance
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT(match_id, token_id) DO UPDATE SET
-                            team = excluded.team,
-                            won = excluded.won,
-                            points = excluded.points,
-                            eliminations = excluded.eliminations,
-                            deposits = excluded.deposits,
-                            wart_distance = excluded.wart_distance
-                        """,
+                    stat_rows.append(
                         (
                             match_id,
                             int(token_id),
@@ -266,9 +313,26 @@ class IngestionService:
                             player.get("eliminations"),
                             player.get("deposits"),
                             player.get("wartDistance"),
-                        ),
+                        )
                     )
                     upserts += 1
+            if stat_rows:
+                self.conn.executemany(
+                    """
+                    INSERT INTO match_stats_players (
+                        match_id, token_id, team, won, points,
+                        eliminations, deposits, wart_distance
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(match_id, token_id) DO UPDATE SET
+                        team = excluded.team,
+                        won = excluded.won,
+                        points = excluded.points,
+                        eliminations = excluded.eliminations,
+                        deposits = excluded.deposits,
+                        wart_distance = excluded.wart_distance
+                    """,
+                    stat_rows,
+                )
         return upserts
 
     def enrich_match_performances(self, match_id: str) -> int:
@@ -285,9 +349,27 @@ class IngestionService:
             page = int(pagination.get("page") or page)
 
             with transaction(self.conn):
+                perf_rows = []
                 for perf in performances:
                     results = perf.get("results") or {}
-                    self.conn.execute(
+                    perf_rows.append(
+                        (
+                            perf.get("id"),
+                            perf.get("matchId") or match_id,
+                            perf.get("mokiId") or "",
+                            perf.get("tokenId"),
+                            perf.get("matchDate") or "",
+                            1 if perf.get("isBye") else 0,
+                            results.get("winType"),
+                            results.get("deposits"),
+                            results.get("eliminations"),
+                            results.get("wartDistance"),
+                            perf.get("updatedAt") or utc_now_iso(),
+                        )
+                    )
+                    upserts += 1
+                if perf_rows:
+                    self.conn.executemany(
                         """
                         INSERT INTO performances (
                             performance_id, match_id, moki_id, token_id, match_date,
@@ -305,21 +387,8 @@ class IngestionService:
                             wart_distance = excluded.wart_distance,
                             updated_at = excluded.updated_at
                         """,
-                        (
-                            perf.get("id"),
-                            perf.get("matchId") or match_id,
-                            perf.get("mokiId") or "",
-                            perf.get("tokenId"),
-                            perf.get("matchDate") or "",
-                            1 if perf.get("isBye") else 0,
-                            results.get("winType"),
-                            results.get("deposits"),
-                            results.get("eliminations"),
-                            results.get("wartDistance"),
-                            perf.get("updatedAt") or utc_now_iso(),
-                        ),
+                        perf_rows,
                     )
-                    upserts += 1
 
             page += 1
 
@@ -339,13 +408,22 @@ class IngestionService:
             "by_date": {},
             "seeded_champions": self.seed_champions(),
         }
+        should_recompute_metrics = False
 
         try:
             for day in date_range(start, end):
                 day_result = self.sync_match_date(day)
                 details["by_date"][day.isoformat()] = day_result.__dict__
+                should_recompute_metrics = should_recompute_metrics or any(
+                    (
+                        day_result.matches_updated,
+                        day_result.stats_upserts,
+                        day_result.perf_upserts,
+                    )
+                )
 
-            recompute_champion_metrics(self.conn)
+            if should_recompute_metrics:
+                recompute_champion_metrics(self.conn)
             finished_at = utc_now_iso()
             self.conn.execute(
                 "UPDATE ingestion_runs SET finished_at = ?, status = ?, details_json = ? WHERE run_id = ?",
@@ -426,7 +504,8 @@ class IngestionService:
                 perf_upserts += self.enrich_match_performances(match_id)
             processed += 1
 
-        recompute_champion_metrics(self.conn)
+        if processed > 0:
+            recompute_champion_metrics(self.conn)
         details = {
             "mode": "enrich-only",
             "start": start.isoformat() if start is not None else None,
@@ -484,8 +563,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--db", default=SETTINGS.db_path, help="SQLite DB path")
     parser.add_argument("--champions", default=SETTINGS.champions_path, help="Path to champions.json")
     parser.add_argument("--from", dest="from_date", default=SETTINGS.backfill_start_default.isoformat(), help="Backfill start date YYYY-MM-DD")
-    parser.add_argument("--to", dest="to_date", default=date.today().isoformat(), help="Backfill end date YYYY-MM-DD")
-    parser.add_argument("--today", dest="today", default=date.today().isoformat(), help="Override today for hourly window")
+    parser.add_argument("--to", dest="to_date", default=utc_today_iso(), help="Backfill end date YYYY-MM-DD")
+    parser.add_argument("--today", dest="today", default=utc_today_iso(), help="Override today for hourly window")
     parser.add_argument("--max-matches", dest="max_matches", type=int, default=0, help="Max matches to enrich in enrich-only mode (0 = no limit)")
     return parser.parse_args()
 

@@ -37,6 +37,27 @@ class ApiClientRetryTests(unittest.TestCase):
                 payload = client.list_matches("2026-02-28", page=1, limit=100)
         self.assertIn("data", payload)
 
+    def test_list_matches_defaults_to_desc_order(self) -> None:
+        limiter = RateLimiter(max_per_minute=1000, min_interval_seconds=0.0, now_fn=lambda: 0.0, sleep_fn=lambda _x: None)
+        client = GrandArenaClient(
+            base_url="https://api.example.test",
+            api_key="k",
+            rate_limiter=limiter,
+            timeout_seconds=1,
+            retries=0,
+        )
+
+        captured = {}
+
+        def fake_urlopen(req, timeout=0):
+            captured["url"] = req.full_url
+            return _FakeHTTPResponse(json.dumps({"data": [], "pagination": {"page": 1, "pages": 1}}).encode("utf-8"))
+
+        with patch("app.api_client.urlopen", side_effect=fake_urlopen):
+            client.list_matches("2026-02-28", page=2, limit=50)
+
+        self.assertIn("order=desc", captured["url"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -8,6 +8,8 @@ def get_connection(db_path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA synchronous = NORMAL")
     return conn
 
 
@@ -111,6 +113,7 @@ def init_db(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_match_players_token_match ON match_players(token_id, match_id);
         CREATE INDEX IF NOT EXISTS idx_match_players_match_team_champ ON match_players(match_id, team, is_champion);
         CREATE INDEX IF NOT EXISTS idx_performances_token_date ON performances(token_id, match_date);
+        CREATE INDEX IF NOT EXISTS idx_performances_match_token ON performances(match_id, token_id);
         CREATE INDEX IF NOT EXISTS idx_match_stats_token_match ON match_stats_players(token_id, match_id);
         CREATE INDEX IF NOT EXISTS idx_matches_updated_at ON matches(updated_at);
         """

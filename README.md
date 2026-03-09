@@ -248,6 +248,29 @@ python -m app.predict_day_ahead --date 2026-02-25 --start-time-utc 08:00 --num-m
 
 Note: the current DB stores `match_date` as date-only (no exact scheduled start timestamp), so `--start-time-utc` is mapped proportionally across the day’s match order.
 
+### Inspect published feed rows for one champion
+
+Use the published GitHub Pages feed to inspect today plus the 1-day lookahead for a specific champion.
+
+```bash
+python -m app.inspect_champion_feed --token-id 3672 --json-out yishu_feed_debug.json
+```
+
+Or resolve by exact champion name:
+
+```bash
+python -m app.inspect_champion_feed --name Yishu --today 2026-03-09
+```
+
+The script prints:
+
+- The selected dates found in the live manifest.
+- The chosen champion's match count for each day versus the expected `30`.
+- The day's min/max champion counts and how many champions are below `30`.
+- A simplified row for every match containing that champion.
+
+If `--json-out` is provided, it writes the full diagnostic payload, including both teams' player lists for each match.
+
 ### Website features (current)
 
 - Terminal-style UI (black background, neon green text).
@@ -337,9 +360,9 @@ Workflow file: `.github/workflows/publish-feed.yml`
 - Optionally seeds the DB from `SEED_DB_URL` if no prior DB artifact exists.
 - Runs:
   - `python -m app.ingest hourly --db state/grandarena.db`
-  - `python -m app.maintenance prune --db state/grandarena.db --keep-days 7`
+  - `python -m app.maintenance prune --db state/grandarena.db --keep-days 5`
   - `python -m app.export_moki_totals --out exports/data/moki_totals.json`
-  - `python -m app.export_feed --db state/grandarena.db --out exports/data --days 7 --lookahead-days 1 --mutable-days-back 1 --mutable-days-forward 1 --cumulative-mutable-days-back 1`
+  - `python -m app.export_feed --db state/grandarena.db --out exports/data --days 30 --lookahead-days 2 --mutable-days-back 2 --mutable-days-forward 2 --cumulative-mutable-days-back 2`
 - Verifies `exports/data/cumulative/current_totals.json.gz` is non-empty before deploy.
 - Publishes `exports/` to GitHub Pages.
 - Uploads updated `state/grandarena.db.gz` for the next run.
@@ -364,8 +387,8 @@ Raw partition exports are generated per day:
 
 Publish behavior for raw partitions:
 
-- Days older than `today-1` inside the 7-day window are reused from prior exports when available.
-- Only `yesterday`, `today`, and `today+1` are refreshed each run.
+- Days older than `today-2` inside the 30-day window are reused from prior exports when available.
+- Only `today-2`, `today-1`, `today`, `today+1`, and `today+2` are refreshed each run.
 
 These files are designed for website/API consumers that need recent raw match/player/stats/performance data without reprocessing all days every run.
 
@@ -384,7 +407,7 @@ These files are designed for website/API consumers that need recent raw match/pl
 Publish behavior for cumulative files:
 
 - Older cumulative daily files are reused when available.
-- Only `yesterday` and `today` cumulative files are recomputed each run.
+- Only `today-2`, `today-1`, and `today` cumulative files are recomputed each run.
 - `cumulative/current_totals.json.gz` should represent the latest cumulative snapshot and must be non-empty for deploy to proceed.
 
 Points formula:

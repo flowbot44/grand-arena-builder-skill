@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Tuple
 
 from .config import SETTINGS
 from .db import get_connection
+from .time_utils import utc_today
 
 
 def parse_date(value: str) -> date:
@@ -296,7 +297,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--date",
         type=parse_date,
-        default=(date.today() + timedelta(days=1)),
+        default=(utc_today() + timedelta(days=1)),
         help="Target date to score (YYYY-MM-DD). Default: tomorrow.",
     )
     parser.add_argument("--days", type=int, default=1, help="Number of days to include starting from --date.")

@@ -4,6 +4,7 @@ import json
 from datetime import date
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from app.analytics import (
     build_champion_history,
@@ -62,7 +63,7 @@ class FakeClient:
             },
         }
 
-    def list_matches(self, match_date: str, page: int, limit: int = 100):
+    def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "desc"):
         return self.matches_by_date.get(match_date, {"data": [], "pagination": {"page": 1, "pages": 1}})
 
     def get_match_stats(self, match_id: str):
@@ -164,6 +165,22 @@ class BackfillAndUpcomingTests(unittest.TestCase):
         )
         self.assertEqual(self.conn.execute("SELECT COUNT(*) AS c FROM performances WHERE match_id = 'm1'").fetchone()["c"], 2)
 
+    def test_seed_champions_skips_rewrite_when_file_is_unchanged(self) -> None:
+        service = self._seeded_service()
+        count_first = service.seed_champions()
+        updated_first = self.conn.execute(
+            "SELECT updated_at FROM champions WHERE token_id = 73"
+        ).fetchone()["updated_at"]
+
+        count_second = service.seed_champions()
+        updated_second = self.conn.execute(
+            "SELECT updated_at FROM champions WHERE token_id = 73"
+        ).fetchone()["updated_at"]
+
+        self.assertEqual(count_first, 2)
+        self.assertEqual(count_second, 2)
+        self.assertEqual(updated_first, updated_second)
+
     def test_sparse_upcoming_sets_insufficient_flag(self) -> None:
         service = self._seeded_service()
         service.run_date_range(date(2026, 2, 19), date(2026, 2, 21))
@@ -236,6 +253,177 @@ class BackfillAndUpcomingTests(unittest.TestCase):
         )
         self.assertEqual(upcoming["player"]["token_id"], 1111)
         self.assertTrue(upcoming["insufficient_upcoming"])
+
+    def test_sync_match_date_uses_desc_order_and_stops_after_cursor(self) -> None:
+        class CursorClient(FakeClient):
+            def __init__(self) -> None:
+                super().__init__()
+                self.calls = []
+                self.pages = {
+                    ("2026-02-20", 1): {
+                        "data": [
+                            {
+                                "id": "m3",
+                                "gameType": "mokiMayhem",
+                                "state": "scored",
+                                "isBye": False,
+                                "matchDate": "2026-02-20",
+                                "updatedAt": "2026-02-20T13:00:00.000Z",
+                                "players": [
+                                    {"mokiId": "a3", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b3", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                ],
+                                "result": {"teamWon": 1, "winType": "eliminations"},
+                            },
+                            {
+                                "id": "m1",
+                                "gameType": "mokiMayhem",
+                                "state": "scored",
+                                "isBye": False,
+                                "matchDate": "2026-02-20",
+                                "updatedAt": "2026-02-20T12:00:00.000Z",
+                                "players": [
+                                    {"mokiId": "a", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                ],
+                                "result": {"teamWon": 1, "winType": "eliminations"},
+                            },
+                        ],
+                        "pagination": {"page": 1, "pages": 3},
+                    },
+                    ("2026-02-20", 2): {
+                        "data": [
+                            {
+                                "id": "older",
+                                "gameType": "mokiMayhem",
+                                "state": "scored",
+                                "isBye": False,
+                                "matchDate": "2026-02-20",
+                                "updatedAt": "2026-02-20T11:00:00.000Z",
+                                "players": [
+                                    {"mokiId": "a4", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b4", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                ],
+                                "result": {"teamWon": 1, "winType": "eliminations"},
+                            }
+                        ],
+                        "pagination": {"page": 2, "pages": 3},
+                    },
+                    ("2026-02-20", 3): {
+                        "data": [],
+                        "pagination": {"page": 3, "pages": 3},
+                    },
+                }
+
+            def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "desc"):
+                self.calls.append((match_date, page, limit, order))
+                return self.pages[(match_date, page)]
+
+            def get_match_stats(self, match_id: str):
+                return {"data": {"matchId": match_id, "state": "scheduled", "teams": []}}
+
+        self.tmp = tempfile.TemporaryDirectory()
+        db_path = f"{self.tmp.name}/test.db"
+        champions_path = f"{self.tmp.name}/champions.json"
+        with open(champions_path, "w", encoding="utf-8") as f:
+            json.dump(
+                [
+                    {"id": 73, "name": "Champ One", "traits": ["A"]},
+                    {"id": 962, "name": "Champ Two", "traits": ["B"]},
+                ],
+                f,
+            )
+
+        conn = get_connection(db_path)
+        init_db(conn)
+        client = CursorClient()
+        service = IngestionService(conn, client, champions_path=champions_path)
+        service.seed_champions()
+        service._store_cursor("matches:2026-02-20", "2026-02-20T12:00:00.000Z")
+
+        result = service.sync_match_date(date(2026, 2, 20))
+
+        self.assertEqual(client.calls[0][3], "desc")
+        self.assertEqual(len(client.calls), 2)
+        self.assertEqual(result.matches_seen, 2)
+        self.assertEqual(result.matches_updated, 2)
+
+    def test_sync_match_date_does_not_short_circuit_for_current_day(self) -> None:
+        class CurrentDayClient(FakeClient):
+            def __init__(self) -> None:
+                super().__init__()
+                self.calls = []
+                self.pages = {
+                    ("2026-02-20", 1): {
+                        "data": [
+                            {
+                                "id": "m3",
+                                "gameType": "mokiMayhem",
+                                "state": "scored",
+                                "isBye": False,
+                                "matchDate": "2026-02-20",
+                                "updatedAt": "2026-02-20T13:00:00.000Z",
+                                "players": [
+                                    {"mokiId": "a3", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b3", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                ],
+                                "result": {"teamWon": 1, "winType": "eliminations"},
+                            }
+                        ],
+                        "pagination": {"page": 1, "pages": 2},
+                    },
+                    ("2026-02-20", 2): {
+                        "data": [
+                            {
+                                "id": "m4",
+                                "gameType": "mokiMayhem",
+                                "state": "scheduled",
+                                "isBye": False,
+                                "matchDate": "2026-02-20",
+                                "updatedAt": "2026-02-20T11:00:00.000Z",
+                                "players": [
+                                    {"mokiId": "a4", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b4", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                ],
+                            }
+                        ],
+                        "pagination": {"page": 2, "pages": 2},
+                    },
+                }
+
+            def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "desc"):
+                self.calls.append((match_date, page, limit, order))
+                return self.pages[(match_date, page)]
+
+            def get_match_stats(self, match_id: str):
+                return {"data": {"matchId": match_id, "state": "scheduled", "teams": []}}
+
+        self.tmp = tempfile.TemporaryDirectory()
+        db_path = f"{self.tmp.name}/test.db"
+        champions_path = f"{self.tmp.name}/champions.json"
+        with open(champions_path, "w", encoding="utf-8") as f:
+            json.dump(
+                [
+                    {"id": 73, "name": "Champ One", "traits": ["A"]},
+                    {"id": 962, "name": "Champ Two", "traits": ["B"]},
+                ],
+                f,
+            )
+
+        conn = get_connection(db_path)
+        init_db(conn)
+        client = CurrentDayClient()
+        service = IngestionService(conn, client, champions_path=champions_path)
+        service.seed_champions()
+        service._store_cursor("matches:2026-02-20", "2026-02-20T12:00:00.000Z")
+
+        with patch("app.ingest.utc_today", return_value=date(2026, 2, 20)):
+            result = service.sync_match_date(date(2026, 2, 20))
+
+        self.assertEqual(client.calls[0][3], "desc")
+        self.assertEqual(len(client.calls), 2)
+        self.assertEqual(result.matches_seen, 2)
+        self.assertEqual(conn.execute("SELECT COUNT(*) AS c FROM matches").fetchone()["c"], 2)
 
     def test_champion_match_info_contains_requested_cohort_stats(self) -> None:
         service = self._seeded_service()

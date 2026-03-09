@@ -9,6 +9,7 @@ from typing import Dict
 from .analytics import recompute_champion_metrics
 from .config import SETTINGS
 from .db import get_connection, init_db
+from .time_utils import utc_today_iso
 
 
 def _window_start(today: date, keep_days: int) -> date:
@@ -68,7 +69,7 @@ def parse_args() -> argparse.Namespace:
     prune_parser = subparsers.add_parser("prune", help="Prune old rows to a rolling window.")
     prune_parser.add_argument("--db", default=SETTINGS.db_path, help="SQLite DB path")
     prune_parser.add_argument("--keep-days", type=int, default=7, help="Rolling day window to retain")
-    prune_parser.add_argument("--today", default=date.today().isoformat(), help="UTC date override YYYY-MM-DD")
+    prune_parser.add_argument("--today", default=utc_today_iso(), help="UTC date override YYYY-MM-DD")
     prune_parser.add_argument("--vacuum", action="store_true", help="Run VACUUM after prune")
 
     return parser.parse_args()

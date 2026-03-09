@@ -23,8 +23,8 @@ jobs:
       SEED_DB_URL: ${{ secrets.SEED_DB_URL }}
       GRANDARENA_DB_PATH: state/grandarena.db
       FETCH_MATCH_PERFORMANCES: "true"
-      LOOKBEHIND_DAYS: "3"
-      LOOKAHEAD_DAYS: "1"
+      LOOKBEHIND_DAYS: "2"
+      LOOKAHEAD_DAYS: "2"
       REQUEST_LIMIT_PER_MINUTE: "600"
       MIN_REQUEST_INTERVAL_SECONDS: "0.10"
     steps:
@@ -42,7 +42,7 @@ jobs:
           python -m pip install -r requirements.txt
 
       - name: Create Work Dirs
-        run: mkdir -p state exports
+        run: mkdir -p state exports/data
 
       - name: Restore Prior DB Artifact
         uses: dawidd6/action-download-artifact@v3
@@ -53,11 +53,36 @@ jobs:
           path: state
           if_no_artifact_found: warn
 
+      - name: Restore Prior Feed Artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: publish-feed.yml
+          workflow_conclusion: success
+          name: grandarena-feed-state
+          path: exports
+          if_no_artifact_found: warn
+
       - name: Unpack DB State
         run: |
           if [ -f state/grandarena.db.gz ]; then
             gunzip -f state/grandarena.db.gz
           fi
+
+      - name: Backup Restored DB State
+        uses: actions/upload-artifact@v4
+        with:
+          name: grandarena-db-state-backup-${{ github.run_id }}
+          path: state/grandarena.db
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Backup Restored Feed State
+        uses: actions/upload-artifact@v4
+        with:
+          name: grandarena-feed-state-backup-${{ github.run_id }}
+          path: exports/data
+          retention-days: 30
+          if-no-files-found: ignore
 
       - name: Seed DB If Missing
         run: |
@@ -83,7 +108,7 @@ jobs:
         run: python -m app.ingest hourly --db state/grandarena.db
 
       - name: Prune Rolling Window
-        run: python -m app.maintenance prune --db state/grandarena.db --keep-days 7
+        run: python -m app.maintenance prune --db state/grandarena.db --keep-days 5
 
       - name: Export Moki Totals
         run: python -m app.export_moki_totals --out exports/data/moki_totals.json
@@ -93,11 +118,11 @@ jobs:
           python -m app.export_feed
           --db state/grandarena.db
           --out exports/data
-          --days 7
-          --lookahead-days 1
-          --mutable-days-back 3
-          --mutable-days-forward 1
-          --cumulative-mutable-days-back 3
+          --days 30
+          --lookahead-days 2
+          --mutable-days-back 2
+          --mutable-days-forward 2
+          --cumulative-mutable-days-back 2
 
       - name: Verify cumulative totals not empty
         run: |
@@ -117,6 +142,67 @@ jobs:
               sys.exit(1)
           PY
 
+      - name: Validate Feed Window Before Deploy
+        run: |
+          python - <<'PY'
+          import json
+          from datetime import datetime, timedelta, timezone
+          from pathlib import Path
+
+          out_dir = Path("exports/data")
+          latest = json.loads((out_dir / "latest.json").read_text(encoding="utf-8"))
+          status = json.loads((out_dir / "status.json").read_text(encoding="utf-8"))
+
+          days = int(latest.get("window_days", 0))
+          lookahead_days = int(latest.get("lookahead_days", -1))
+          available_dates = list(latest.get("available_dates") or [])
+          partitions = list(latest.get("partitions") or [])
+          raw_dates = list(status.get("raw_dates") or [])
+
+          if days != 30:
+              raise SystemExit(f"unexpected window_days: {days}")
+          if lookahead_days != 2:
+              raise SystemExit(f"unexpected lookahead_days: {lookahead_days}")
+          if not available_dates:
+              raise SystemExit("available_dates is empty")
+          if available_dates != raw_dates:
+              raise SystemExit("latest.json available_dates does not match status.json raw_dates")
+          if len(partitions) != len(available_dates):
+              raise SystemExit("partition count does not match available_dates count")
+
+          today = datetime.now(timezone.utc).date()
+          expected_start = (today - timedelta(days=29)).isoformat()
+          expected_end = (today + timedelta(days=2)).isoformat()
+          if available_dates[0] != expected_start:
+              raise SystemExit(f"unexpected first available date: {available_dates[0]} != {expected_start}")
+          if available_dates[-1] != expected_end:
+              raise SystemExit(f"unexpected last available date: {available_dates[-1]} != {expected_end}")
+          if status.get("window_start") != expected_start:
+              raise SystemExit(f"unexpected status window_start: {status.get('window_start')} != {expected_start}")
+          if status.get("window_end") != expected_end:
+              raise SystemExit(f"unexpected status window_end: {status.get('window_end')} != {expected_end}")
+
+          missing_files = []
+          for partition in partitions:
+              rel = partition.get("url")
+              if not rel:
+                  raise SystemExit("partition missing url")
+              if not (out_dir / rel).exists():
+                  missing_files.append(rel)
+          if missing_files:
+              raise SystemExit(f"missing partition files: {missing_files[:5]}")
+
+          current_totals = out_dir / "cumulative" / "current_totals.json.gz"
+          if not current_totals.exists():
+              raise SystemExit("missing cumulative/current_totals.json.gz")
+
+          latest_run = status.get("latest_ingestion_run") or {}
+          if latest_run and latest_run.get("status") not in {"success", "running"}:
+              raise SystemExit(f"unexpected latest ingestion status: {latest_run.get('status')}")
+
+          print("feed_window_validation=ok")
+          PY
+
       - name: Pack DB State
         run: gzip -f state/grandarena.db
 
@@ -125,6 +211,14 @@ jobs:
         with:
           name: grandarena-db-state
           path: state/grandarena.db.gz
+          retention-days: 90
+          overwrite: true
+
+      - name: Upload Feed State Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: grandarena-feed-state
+          path: exports/data
           retention-days: 90
           overwrite: true
 

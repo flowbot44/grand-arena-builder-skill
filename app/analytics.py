@@ -5,6 +5,8 @@ import math
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
+from .time_utils import utc_today
+
 
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -183,7 +185,7 @@ def build_champion_next_matches(
     today: Optional[date] = None,
     lookahead_days: int = 2,
 ) -> Dict[str, Any]:
-    today = today or date.today()
+    today = today or utc_today()
     window_start = today.isoformat()
     window_end = (today + timedelta(days=lookahead_days)).isoformat()
 
@@ -685,7 +687,7 @@ def build_non_champion_next_matches(
     today: Optional[date] = None,
     lookahead_days: int = 2,
 ) -> Dict[str, Any]:
-    today = today or date.today()
+    today = today or utc_today()
     window_start = today.isoformat()
     window_end = (today + timedelta(days=lookahead_days)).isoformat()
 

@@ -119,7 +119,7 @@ class GrandArenaClient:
 
         raise ApiError(f"Request failed after retries: {url}")
 
-    def list_matches(self, match_date: str, page: int, limit: int = 100) -> Dict[str, Any]:
+    def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "desc") -> Dict[str, Any]:
         return self._request_json(
             "/api/v1/matches",
             {
@@ -128,7 +128,7 @@ class GrandArenaClient:
                 "gameType": "mokiMayhem",
                 "matchDate": match_date,
                 "sort": "updatedAt",
-                "order": "asc",
+                "order": order,
             },
         )
 
