@@ -26,7 +26,7 @@ jobs:
       CHAMPION_ONLY_MATCHES: "false"
       LOOKBEHIND_DAYS: "2"
       LOOKAHEAD_DAYS: "2"
-      REQUEST_LIMIT_PER_MINUTE: "600"
+      REQUEST_LIMIT_PER_MINUTE: "720"
       MIN_REQUEST_INTERVAL_SECONDS: "0.10"
     steps:
       - name: Checkout

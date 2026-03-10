@@ -132,20 +132,11 @@ class IngestionService:
         return str(row["value"] or "")
 
     def _upsert_match(self, match: Dict[str, Any], now: str) -> bool:
-        existing = self.conn.execute(
-            "SELECT state, updated_at FROM matches WHERE match_id = ?",
-            (match["id"],),
-        ).fetchone()
-
         result = match.get("result") or {}
         updated = match.get("updatedAt") or now
         current_state = match.get("state") or "scheduled"
-        if existing and existing["state"] == current_state and existing["updated_at"] == updated:
-            self.conn.execute("UPDATE matches SET last_seen_at = ? WHERE match_id = ?", (now, match["id"]))
-            return False
-
         with transaction(self.conn):
-            self.conn.execute(
+            cursor = self.conn.execute(
                 """
                 INSERT INTO matches (
                     match_id, game_type, match_date, state, is_bye,
@@ -160,6 +151,8 @@ class IngestionService:
                     win_type = excluded.win_type,
                     updated_at = excluded.updated_at,
                     last_seen_at = excluded.last_seen_at
+                WHERE matches.state != excluded.state
+                   OR matches.updated_at != excluded.updated_at
                 """,
                 (
                     match["id"],
@@ -173,6 +166,10 @@ class IngestionService:
                     now,
                 ),
             )
+            changed = cursor.rowcount > 0
+            if not changed:
+                self.conn.execute("UPDATE matches SET last_seen_at = ? WHERE match_id = ?", (now, match["id"]))
+                return False
 
             self.conn.execute("DELETE FROM match_players WHERE match_id = ?", (match["id"],))
             player_rows = []
@@ -202,9 +199,7 @@ class IngestionService:
                     player_rows,
                 )
 
-        if not existing:
-            return True
-        return existing["state"] != current_state or existing["updated_at"] != updated
+        return True
 
     def _store_cursor(self, key: str, value: str) -> None:
         now = utc_now_iso()

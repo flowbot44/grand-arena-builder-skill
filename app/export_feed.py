@@ -109,6 +109,19 @@ def _cumulative_entry_from_file(day_iso: str, path: Path) -> Dict[str, Any]:
     }
 
 
+def _support_stats_entry_from_file(path: Path) -> Dict[str, Any]:
+    payload = _read_json_if_exists(path) or {}
+    player_count = len(payload.get("player_games") or {}) if isinstance(payload, dict) else 0
+    champion_count = len(payload.get("champion_games") or {}) if isinstance(payload, dict) else 0
+    return {
+        "url": "support_stats.json",
+        "sha256": _sha256_hex(path),
+        "bytes": path.stat().st_size,
+        "player_count": player_count,
+        "champion_count": champion_count,
+    }
+
+
 def _match_rows_for_date(conn: sqlite3.Connection, match_date: str) -> List[sqlite3.Row]:
     return conn.execute(
         """
@@ -246,6 +259,7 @@ def _scored_rows_for_window(conn: sqlite3.Connection, start_date: str, end_date:
             mp.team,
             mp.token_id,
             mp.moki_id,
+            mp.is_champion,
             COALESCE(p.deposits, msp.deposits, 0) AS deposits,
             COALESCE(p.eliminations, msp.eliminations, 0) AS eliminations,
             COALESCE(p.wart_distance, msp.wart_distance, 0) AS wart_distance
@@ -451,6 +465,30 @@ def export_feed(
 
     current_totals_path = out_dir / "cumulative" / "current_totals.json.gz"
     _write_gzip_json(current_totals_path, current_rows)
+    support_stats_path = out_dir / "support_stats.json"
+    player_games: Dict[int, Dict[str, int]] = {}
+    champion_games: Dict[int, Dict[str, int]] = {}
+    for rows in by_date.values():
+        for row in rows:
+            token_id = int(row["token_id"])
+            won = row["team_won"] is not None and row["team_won"] == row["team"]
+            stats = player_games.setdefault(token_id, {"games": 0, "wins": 0})
+            stats["games"] += 1
+            stats["wins"] += 1 if won else 0
+
+            if int(row["is_champion"]) == 1:
+                champ_stats = champion_games.setdefault(token_id, {"games": 0, "wins": 0})
+                champ_stats["games"] += 1
+                champ_stats["wins"] += 1 if won else 0
+
+    _write_json(
+        support_stats_path,
+        {
+            "generated_at_utc": utc_now_iso(),
+            "player_games": {str(token_id): stats for token_id, stats in sorted(player_games.items())},
+            "champion_games": {str(token_id): stats for token_id, stats in sorted(champion_games.items())},
+        },
+    )
     cumulative_manifest = {
         "generated_at_utc": utc_now_iso(),
         "window_days": days,
@@ -462,6 +500,7 @@ def export_feed(
             "bytes": current_totals_path.stat().st_size,
             "player_count": len(current_rows),
         },
+        "support_stats": _support_stats_entry_from_file(support_stats_path),
     }
     _write_json(out_dir / "cumulative" / "latest.json", cumulative_manifest)
 

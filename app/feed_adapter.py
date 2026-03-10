@@ -106,6 +106,16 @@ def _validate_moki_totals(payload: Any) -> Dict[str, Any]:
     return payload
 
 
+def _validate_support_stats(payload: Any) -> Dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise FeedFormatError("support stats payload must be an object")
+    if not isinstance(payload.get("player_games"), dict):
+        raise FeedFormatError("support stats missing player_games")
+    if not isinstance(payload.get("champion_games"), dict):
+        raise FeedFormatError("support stats missing champion_games")
+    return payload
+
+
 class FeedAdapter:
     def __init__(
         self,
@@ -252,6 +262,29 @@ class FeedAdapter:
             gzip_json=False,
             validator=_validate_moki_totals,
             generated_at_extractor=lambda _d: latest_meta.data_generated_at,
+        )
+        return payload, meta
+
+    def get_support_stats(self) -> Tuple[Dict[str, Any], FeedMeta]:
+        cumulative_latest, cumulative_meta = self._cached_fetch(
+            cache_key="cumulative_latest_manifest",
+            url=f"{self.base_url}/cumulative/latest.json",
+            gzip_json=False,
+            validator=lambda d: d if isinstance(d, dict) and "current_totals" in d else (_ for _ in ()).throw(
+                FeedFormatError("cumulative latest missing current_totals")
+            ),
+            generated_at_extractor=lambda d: d.get("generated_at_utc"),
+        )
+        support_meta = cumulative_latest.get("support_stats") if isinstance(cumulative_latest, dict) else None
+        rel_url = "support_stats.json"
+        if isinstance(support_meta, dict) and support_meta.get("url"):
+            rel_url = str(support_meta["url"])
+        payload, meta = self._cached_fetch(
+            cache_key="support_stats",
+            url=urljoin(f"{self.base_url}/", rel_url),
+            gzip_json=False,
+            validator=_validate_support_stats,
+            generated_at_extractor=lambda _d: cumulative_meta.data_generated_at,
         )
         return payload, meta
 
@@ -575,22 +608,17 @@ class FeedAdapter:
         stale = latest_meta.stale_data or part_meta.stale_data
         age = max(latest_meta.cache_age_seconds, part_meta.cache_age_seconds)
 
-        scored_rows, _ = self._all_partitions_payloads()
-        player_games: Dict[int, Tuple[int, int]] = {}
-        champion_games: Dict[int, Tuple[int, int]] = {}
-        for payload in scored_rows:
-            match = payload.get("match") or {}
-            if match.get("state") != "scored":
-                continue
-            team_won = match.get("team_won")
-            for p in payload.get("players") or []:
-                tid = int(p.get("token_id"))
-                g, w = player_games.get(tid, (0, 0))
-                won = team_won is not None and team_won == p.get("team")
-                player_games[tid] = (g + 1, w + (1 if won else 0))
-                if p.get("is_champion"):
-                    cg, cw = champion_games.get(tid, (0, 0))
-                    champion_games[tid] = (cg + 1, cw + (1 if won else 0))
+        support_stats, support_meta = self.get_support_stats()
+        stale = stale or support_meta.stale_data
+        age = max(age, support_meta.cache_age_seconds)
+        player_games = {
+            int(token_id): (int(stats.get("games", 0) or 0), int(stats.get("wins", 0) or 0))
+            for token_id, stats in (support_stats.get("player_games") or {}).items()
+        }
+        champion_games = {
+            int(token_id): (int(stats.get("games", 0) or 0), int(stats.get("wins", 0) or 0))
+            for token_id, stats in (support_stats.get("champion_games") or {}).items()
+        }
 
         def _win_pct(stats: Tuple[int, int]) -> float:
             g, w = stats

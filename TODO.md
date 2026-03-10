@@ -6,6 +6,6 @@
 - [x] Skip `seed_champions()` when `champions.json` content has not changed.
 - [x] Enable SQLite write-oriented pragmas for the ingestion workload.
 - [x] Batch `match_players`, `match_stats_players`, and `performances` writes with `executemany()`.
-- [ ] Reduce per-match read-before-write work in `_upsert_match()` further, likely with a more selective upsert strategy.
-- [ ] Precompute lightweight support win-rate aggregates for feed lookahead instead of scanning all scored partitions per request.
+- [x] Reduce per-match read-before-write work in `_upsert_match()` further, likely with a more selective upsert strategy.
+- [x] Precompute lightweight support win-rate aggregates for feed lookahead instead of scanning all scored partitions per request.
 - [ ] Revisit `recompute_champion_metrics()` if DB growth resumes; current rebuild is acceptable for the trimmed DB window but still full-refresh.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip
 import json
 import unittest
+from datetime import date
 from unittest.mock import patch
 from urllib.error import URLError
 
@@ -108,6 +109,16 @@ class FeedAdapterTests(unittest.TestCase):
 
         def fake_urlopen(url, timeout=0):
             calls.append(url)
+            if url.endswith("/cumulative/latest.json"):
+                return _FakeHTTPResponse(
+                    json.dumps(
+                        {
+                            "generated_at_utc": "2026-02-27T00:00:00+00:00",
+                            "current_totals": {"url": "cumulative/current_totals.json.gz"},
+                            "support_stats": {"url": "support_stats.json"},
+                        }
+                    ).encode("utf-8")
+                )
             if url.endswith("/latest.json"):
                 return _FakeHTTPResponse(
                     json.dumps(
@@ -132,6 +143,77 @@ class FeedAdapterTests(unittest.TestCase):
         self.assertEqual(payload["count"], 1)
         self.assertEqual(payload["data"][0]["tokenId"], 807)
         self.assertEqual(len(calls), 2)
+
+    def test_champion_next_matches_uses_support_stats_feed(self) -> None:
+        calls = []
+
+        def fake_urlopen(url, timeout=0):
+            calls.append(url)
+            if url.endswith("/cumulative/latest.json"):
+                return _FakeHTTPResponse(
+                    json.dumps(
+                        {
+                            "generated_at_utc": "2026-02-27T00:00:00+00:00",
+                            "current_totals": {"url": "cumulative/current_totals.json.gz"},
+                            "support_stats": {"url": "support_stats.json"},
+                        }
+                    ).encode("utf-8")
+                )
+            if url.endswith("/latest.json"):
+                return _FakeHTTPResponse(
+                    json.dumps(
+                        {
+                            "generated_at_utc": "2026-02-27T00:00:00+00:00",
+                            "window_days": 7,
+                            "lookahead_days": 1,
+                            "available_dates": ["2026-02-27"],
+                            "partitions": [
+                                {
+                                    "date": "2026-02-27",
+                                    "url": "partitions/raw_matches_2026-02-27.json.gz",
+                                    "sha256": "x",
+                                    "bytes": 1,
+                                    "match_count": 1,
+                                }
+                            ],
+                        }
+                    ).encode("utf-8")
+                )
+            if url.endswith("/partitions/raw_matches_2026-02-27.json.gz"):
+                return _FakeHTTPResponse(
+                    _gz_json(
+                        [
+                            {
+                                "match": {"match_id": "m1", "match_date": "2026-02-27", "state": "scheduled"},
+                                "players": [
+                                    {"token_id": 807, "name": "Champ", "team": 1, "is_champion": 1},
+                                    {"token_id": 1001, "name": "NC1", "team": 1, "is_champion": 0},
+                                    {"token_id": 962, "name": "Opp", "team": 2, "is_champion": 1},
+                                ],
+                                "stats_players": [],
+                                "performances": [],
+                            }
+                        ]
+                    )
+                )
+            if url.endswith("/support_stats.json"):
+                return _FakeHTTPResponse(
+                    json.dumps(
+                        {
+                            "generated_at_utc": "2026-02-27T00:00:00+00:00",
+                            "player_games": {"1001": {"games": 4, "wins": 3}},
+                            "champion_games": {"807": {"games": 5, "wins": 4}, "962": {"games": 6, "wins": 2}},
+                        }
+                    ).encode("utf-8")
+                )
+            raise AssertionError(f"unexpected URL: {url}")
+
+        adapter = FeedAdapter(base_url="https://example.com/data", ttl_seconds=600, timeout_seconds=1)
+        with patch("app.feed_adapter.urlopen", side_effect=fake_urlopen), patch("app.feed_adapter.utc_today", return_value=date(2026, 2, 27)):
+            payload, _meta = adapter.champion_next_matches(807, limit=10, lookahead_days=1)
+        self.assertEqual(payload["champion"]["token_id"], 807)
+        self.assertEqual(len(payload["matches"]), 1)
+        self.assertTrue(any(url.endswith("/support_stats.json") for url in calls))
 
 
 class FeedRoutesTests(unittest.TestCase):

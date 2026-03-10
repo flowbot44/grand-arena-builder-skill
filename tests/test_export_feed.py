@@ -104,6 +104,8 @@ class ExportFeedTests(unittest.TestCase):
         self.assertEqual(cumulative_latest["available_dates"][-1], "2026-02-26")
         self.assertEqual(len(cumulative_latest["files"]), 7)
         self.assertEqual(len(cumulative_latest["current_totals"]["sha256"]), 64)
+        self.assertIn("support_stats", cumulative_latest)
+        self.assertEqual(cumulative_latest["support_stats"]["url"], "support_stats.json")
 
         current_totals = _read_gzip_json(self.out_dir / "cumulative" / "current_totals.json.gz")
         row_111 = [row for row in current_totals if int(row["token_id"]) == 111][0]
@@ -116,6 +118,10 @@ class ExportFeedTests(unittest.TestCase):
 
         daily_latest = _read_gzip_json(self.out_dir / "cumulative" / "daily_totals_2026-02-26.json.gz")
         self.assertEqual(current_totals, daily_latest)
+
+        support_stats = _read_json(self.out_dir / "support_stats.json")
+        self.assertEqual(support_stats["player_games"]["111"]["games"], 2)
+        self.assertEqual(support_stats["player_games"]["111"]["wins"], 1)
 
     def test_export_includes_moki_totals_metadata_when_present(self) -> None:
         self._insert_seed_data()
