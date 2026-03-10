@@ -51,6 +51,7 @@ class IngestionService:
         self.client = client
         self.champions_path = champions_path
         self._champion_token_ids: set[int] = set()
+        self._force_full_refresh = False
 
     def seed_champions(self) -> int:
         raw = self._read_champions_file()
@@ -219,7 +220,7 @@ class IngestionService:
         result = SyncResult()
         enrich_ids: set[str] = set()
         cursor_key = f"matches:{match_date.isoformat()}"
-        use_cursor_cutoff = match_date < utc_today()
+        use_cursor_cutoff = (match_date < utc_today()) and not self._force_full_refresh
         previous_cursor = self._load_cursor(cursor_key) if use_cursor_cutoff else ""
         max_updated_at = previous_cursor
         today_iso = utc_now_iso()
@@ -389,7 +390,7 @@ class IngestionService:
 
         return upserts
 
-    def run_date_range(self, start: date, end: date) -> Dict[str, Any]:
+    def run_date_range(self, start: date, end: date, *, force_full_refresh: bool = False) -> Dict[str, Any]:
         started_at = utc_now_iso()
         run_id = self.conn.execute(
             "INSERT INTO ingestion_runs (started_at, status) VALUES (?, ?)",
@@ -406,6 +407,7 @@ class IngestionService:
         should_recompute_metrics = False
 
         try:
+            self._force_full_refresh = force_full_refresh
             for day in date_range(start, end):
                 day_result = self.sync_match_date(day)
                 details["by_date"][day.isoformat()] = day_result.__dict__
@@ -435,6 +437,8 @@ class IngestionService:
             )
             self.conn.commit()
             raise
+        finally:
+            self._force_full_refresh = False
 
     def run_enrichment_only(
         self,
@@ -536,7 +540,7 @@ def run_backfill(db_path: str, start: date, end: date, champions_path: str) -> D
     conn = get_connection(db_path)
     init_db(conn)
     service = IngestionService(conn, build_client(), champions_path=champions_path)
-    return service.run_date_range(start, end)
+    return service.run_date_range(start, end, force_full_refresh=True)
 
 
 def run_hourly(db_path: str, today: date, champions_path: str) -> Dict[str, Any]:

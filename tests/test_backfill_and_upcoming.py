@@ -425,6 +425,82 @@ class BackfillAndUpcomingTests(unittest.TestCase):
         self.assertEqual(result.matches_seen, 2)
         self.assertEqual(conn.execute("SELECT COUNT(*) AS c FROM matches").fetchone()["c"], 2)
 
+    def test_run_date_range_force_full_refresh_ignores_past_cursor_cutoff(self) -> None:
+        class RecoveryClient(FakeClient):
+            def __init__(self) -> None:
+                super().__init__()
+                self.calls = []
+                self.pages = {
+                    ("2026-02-20", 1): {
+                        "data": [
+                            {
+                                "id": "m3",
+                                "gameType": "mokiMayhem",
+                                "state": "scored",
+                                "isBye": False,
+                                "matchDate": "2026-02-20",
+                                "updatedAt": "2026-02-20T13:00:00.000Z",
+                                "players": [
+                                    {"mokiId": "a3", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b3", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                ],
+                                "result": {"teamWon": 1, "winType": "eliminations"},
+                            }
+                        ],
+                        "pagination": {"page": 1, "pages": 2},
+                    },
+                    ("2026-02-20", 2): {
+                        "data": [
+                            {
+                                "id": "m4",
+                                "gameType": "mokiMayhem",
+                                "state": "scheduled",
+                                "isBye": False,
+                                "matchDate": "2026-02-20",
+                                "updatedAt": "2026-02-20T11:00:00.000Z",
+                                "players": [
+                                    {"mokiId": "a4", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b4", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                ],
+                            }
+                        ],
+                        "pagination": {"page": 2, "pages": 2},
+                    },
+                }
+
+            def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "desc"):
+                self.calls.append((match_date, page, limit, order))
+                return self.pages[(match_date, page)]
+
+            def get_match_stats(self, match_id: str):
+                return {"data": {"matchId": match_id, "state": "scheduled", "teams": []}}
+
+        self.tmp = tempfile.TemporaryDirectory()
+        db_path = f"{self.tmp.name}/test.db"
+        champions_path = f"{self.tmp.name}/champions.json"
+        with open(champions_path, "w", encoding="utf-8") as f:
+            json.dump(
+                [
+                    {"id": 73, "name": "Champ One", "traits": ["A"]},
+                    {"id": 962, "name": "Champ Two", "traits": ["B"]},
+                ],
+                f,
+            )
+
+        conn = get_connection(db_path)
+        init_db(conn)
+        client = RecoveryClient()
+        service = IngestionService(conn, client, champions_path=champions_path)
+        service.seed_champions()
+        service._store_cursor("matches:2026-02-20", "2026-02-20T12:00:00.000Z")
+
+        with patch("app.ingest.utc_today", return_value=date(2026, 2, 21)):
+            details = service.run_date_range(date(2026, 2, 20), date(2026, 2, 20), force_full_refresh=True)
+
+        self.assertEqual(len(client.calls), 2)
+        self.assertEqual(details["by_date"]["2026-02-20"]["matches_seen"], 2)
+        self.assertEqual(conn.execute("SELECT COUNT(*) AS c FROM matches").fetchone()["c"], 2)
+
     def test_champion_match_info_contains_requested_cohort_stats(self) -> None:
         service = self._seeded_service()
         service.run_date_range(date(2026, 2, 19), date(2026, 2, 21))
