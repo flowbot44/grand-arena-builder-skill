@@ -23,6 +23,7 @@ jobs:
       SEED_DB_URL: ${{ secrets.SEED_DB_URL }}
       GRANDARENA_DB_PATH: state/grandarena.db
       FETCH_MATCH_PERFORMANCES: "true"
+      CHAMPION_ONLY_MATCHES: "false"
       LOOKBEHIND_DAYS: "2"
       LOOKAHEAD_DAYS: "2"
       REQUEST_LIMIT_PER_MINUTE: "600"
