@@ -152,7 +152,7 @@ This repo now includes a local data platform in `app/`:
 
 ### Runtime assumptions
 
-- Free-tier safe request pacing: `80 req/min` with `0.75s` minimum interval.
+- Current tuned workflow pacing: `720 req/min` with `0.10s` minimum interval.
 - Retry on `429` and `5xx` with exponential backoff (`1s, 2s, 4s, 8s`).
 - Backfill default start: `2026-02-19`.
 - Lookahead window for upcoming matches: `2` days.
@@ -167,8 +167,8 @@ export GRANDARENA_DB_PATH="grandarena.db" # optional
 Optional tuning:
 
 ```bash
-export REQUEST_LIMIT_PER_MINUTE=80
-export MIN_REQUEST_INTERVAL_SECONDS=0.75
+export REQUEST_LIMIT_PER_MINUTE=720
+export MIN_REQUEST_INTERVAL_SECONDS=0.10
 export LOOKBEHIND_DAYS=2
 export LOOKAHEAD_DAYS=2
 export CHAMPION_ONLY_MATCHES=true
@@ -178,7 +178,12 @@ export FETCH_MATCH_PERFORMANCES=true
 Efficiency toggles:
 
 - `CHAMPION_ONLY_MATCHES=true` (default): only store/enrich matches that include at least one token from `champions.json`.
+- `CHAMPION_ONLY_MATCHES=false`: fetch, store, and export all matches in the ingest window, including matches with no champion in them. In plain terms, this is the non-champion-inclusive mode.
 - `FETCH_MATCH_PERFORMANCES=false`: skip `/matches/{id}/performances` enrichment and use stats-only enrichment for lower API usage.
+
+Workflow note:
+
+- The current GitHub Actions publish workflow explicitly sets `CHAMPION_ONLY_MATCHES=false`, so the published feed is currently ingesting all matches for the rolling date window, not only champion-containing matches.
 
 ### Backfill season to today
 
@@ -346,6 +351,7 @@ Expected public URLs (replace `<user>`/`<repo>`):
 - `https://<user>.github.io/<repo>/data/latest.json`
 - `https://<user>.github.io/<repo>/data/status.json`
 - `https://<user>.github.io/<repo>/data/partitions/raw_matches_YYYY-MM-DD.json.gz`
+- `https://<user>.github.io/<repo>/data/support_stats.json`
 - `https://<user>.github.io/<repo>/data/cumulative/latest.json`
 - `https://<user>.github.io/<repo>/data/cumulative/current_totals.json.gz`
 - `https://<user>.github.io/<repo>/data/cumulative/daily_totals_YYYY-MM-DD.json.gz`
@@ -357,24 +363,43 @@ Workflow file: `.github/workflows/publish-feed.yml`
 
 - Triggered every 4 hours (`cron: "0 */4 * * *"`, UTC) and via manual dispatch.
 - Restores the last DB state artifact (`state/grandarena.db.gz`) when available.
+- Restores the last feed artifact (`exports/data`) when available.
 - Optionally seeds the DB from `SEED_DB_URL` if no prior DB artifact exists.
 - Runs:
   - `python -m app.ingest hourly --db state/grandarena.db`
   - `python -m app.maintenance prune --db state/grandarena.db --keep-days 5`
   - `python -m app.export_moki_totals --out exports/data/moki_totals.json`
   - `python -m app.export_feed --db state/grandarena.db --out exports/data --days 30 --lookahead-days 2 --mutable-days-back 2 --mutable-days-forward 2 --cumulative-mutable-days-back 2`
+- Current tuned workflow values:
+  - `REQUEST_LIMIT_PER_MINUTE=720`
+  - `MIN_REQUEST_INTERVAL_SECONDS=0.10`
+  - `CHAMPION_ONLY_MATCHES=false`
+  - This setting has been performing well in the current GitHub Actions runs; the next reasonable test would be a measured increase to `900` with request/retry telemetry in place.
+- Uploads run-scoped backup artifacts for the restored DB/feed state before mutation.
+- Validates the exported feed window and required files before the Pages deploy step.
 - Verifies `exports/data/cumulative/current_totals.json.gz` is non-empty before deploy.
 - Publishes `exports/` to GitHub Pages.
 - Uploads updated `state/grandarena.db.gz` for the next run.
+
+One-time recovery mode:
+
+- Manual dispatch now accepts an optional `recovery_from` input.
+- If provided, the workflow:
+  - runs the normal hourly ingest first
+  - backfills from `recovery_from` through today (UTC)
+  - exports the feed with the recovered data still present in SQLite
+  - re-prunes SQLite back to the normal 5-day rolling window after export
+- Example recovery input to rebuild back to Monday, March 2, 2026:
+  - `recovery_from=2026-03-02`
 
 Required secret:
 
 - `GRANDARENA_API_KEY`
 - `SEED_DB_URL` (optional, only used when no DB artifact is available)
 
-### 7-day rolling raw partitions
+### 30-day feed with 5-day DB window
 
-`app.maintenance` keeps only a rolling 7-day window in DB by deleting match-linked rows older than the cutoff date:
+`app.maintenance` keeps only a rolling 5-day window in DB (`today-2` through `today+2`) by deleting match-linked rows older than the cutoff date:
 
 - `performances`
 - `match_stats_players`
@@ -409,6 +434,12 @@ Publish behavior for cumulative files:
 - Older cumulative daily files are reused when available.
 - Only `today-2`, `today-1`, and `today` cumulative files are recomputed each run.
 - `cumulative/current_totals.json.gz` should represent the latest cumulative snapshot and must be non-empty for deploy to proceed.
+
+Champion lookahead support stats:
+
+- `app.export_feed` also emits `data/support_stats.json`.
+- This file contains precomputed per-token win/loss aggregates for all players and champions.
+- Champion lookahead uses it to avoid rescanning all scored partitions on each request.
 
 Points formula:
 

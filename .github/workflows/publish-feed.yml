@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '0 */4 * * *'
   workflow_dispatch:
+    inputs:
+      recovery_from:
+        description: "Optional one-time recovery backfill start date (UTC, YYYY-MM-DD). Example: 2026-03-02"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -28,6 +33,7 @@ jobs:
       LOOKAHEAD_DAYS: "2"
       REQUEST_LIMIT_PER_MINUTE: "720"
       MIN_REQUEST_INTERVAL_SECONDS: "0.10"
+      RECOVERY_FROM: ${{ github.event.inputs.recovery_from || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,7 +114,14 @@ jobs:
       - name: Hourly Ingest
         run: python -m app.ingest hourly --db state/grandarena.db
 
+      - name: One-Time Recovery Backfill
+        if: ${{ env.RECOVERY_FROM != '' }}
+        run: |
+          echo "Running one-time recovery backfill from ${RECOVERY_FROM} to today (UTC)"
+          python -m app.ingest backfill --db state/grandarena.db --from "${RECOVERY_FROM}" --to "$(date -u +%F)"
+
       - name: Prune Rolling Window
+        if: ${{ env.RECOVERY_FROM == '' }}
         run: python -m app.maintenance prune --db state/grandarena.db --keep-days 5
 
       - name: Export Moki Totals
@@ -124,6 +137,10 @@ jobs:
           --mutable-days-back 2
           --mutable-days-forward 2
           --cumulative-mutable-days-back 2
+
+      - name: Re-Prune Rolling Window After Recovery Export
+        if: ${{ env.RECOVERY_FROM != '' }}
+        run: python -m app.maintenance prune --db state/grandarena.db --keep-days 5
 
       - name: Verify cumulative totals not empty
         run: |
