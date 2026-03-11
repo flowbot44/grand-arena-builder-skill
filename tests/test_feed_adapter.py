@@ -30,6 +30,48 @@ def _gz_json(payload):
 
 
 class FeedAdapterTests(unittest.TestCase):
+    def test_champion_rows_prefers_stats_over_performances(self) -> None:
+        adapter = FeedAdapter(base_url="https://example.com/data", ttl_seconds=600, timeout_seconds=1)
+
+        adapter.get_latest_manifest = lambda: (  # type: ignore[method-assign]
+            {
+                "lookahead_days": 2,
+                "available_dates": ["2026-02-27"],
+            },
+            type("Meta", (), {"data_generated_at": "2026-02-27T00:00:00+00:00", "cache_age_seconds": 0, "stale_data": False})(),
+        )
+        adapter._all_partitions_payloads = lambda: (  # type: ignore[method-assign]
+            [
+                {
+                    "match": {"state": "scored", "team_won": 1},
+                    "players": [{"token_id": 73, "team": 1, "name": "Champ", "is_champion": True}],
+                    "stats_players": [
+                        {
+                            "token_id": 73,
+                            "team": 1,
+                            "deposits": 2,
+                            "eliminations": 3,
+                            "wart_distance": 10,
+                        }
+                    ],
+                    "performances": [
+                        {
+                            "token_id": 73,
+                            "deposits": 9,
+                            "eliminations": 9,
+                            "wart_distance": 160,
+                        }
+                    ],
+                }
+            ],
+            type("Meta", (), {"data_generated_at": "2026-02-27T00:00:00+00:00", "cache_age_seconds": 0, "stale_data": False})(),
+        )
+
+        payload, _meta = adapter.champion_rows()
+        row = payload["rows"][0]
+        self.assertEqual(row["token_id"], 73)
+        self.assertEqual(row["avg_points"], 640.0)
+
     def test_gzip_decode_current_totals(self) -> None:
         calls = []
 

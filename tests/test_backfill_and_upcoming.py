@@ -201,6 +201,28 @@ class BackfillAndUpcomingTests(unittest.TestCase):
         self.assertLess(len(payload["matches"]), 10)
         self.assertIn("opponent_team_support_win_pct", payload["matches"][0]["components"])
 
+    def test_recompute_metrics_falls_back_to_match_stats_without_performances(self) -> None:
+        service = self._seeded_service()
+        service.run_date_range(date(2026, 2, 19), date(2026, 2, 21))
+        self.conn.execute("DELETE FROM performances")
+        self.conn.commit()
+
+        recompute_champion_metrics(self.conn)
+
+        row = self.conn.execute(
+            """
+            SELECT avg_points, avg_eliminations, avg_deposits, avg_wart_distance
+            FROM champion_metrics
+            WHERE token_id = 73
+            """
+        ).fetchone()
+
+        self.assertIsNotNone(row)
+        self.assertAlmostEqual(float(row["avg_points"]), 14.0)
+        self.assertAlmostEqual(float(row["avg_eliminations"]), 3.0)
+        self.assertAlmostEqual(float(row["avg_deposits"]), 2.0)
+        self.assertAlmostEqual(float(row["avg_wart_distance"]), 10.0)
+
     def test_history_returns_games_and_totals(self) -> None:
         service = self._seeded_service()
         service.run_date_range(date(2026, 2, 19), date(2026, 2, 21))

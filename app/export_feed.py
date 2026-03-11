@@ -260,9 +260,9 @@ def _scored_rows_for_window(conn: sqlite3.Connection, start_date: str, end_date:
             mp.token_id,
             mp.moki_id,
             mp.is_champion,
-            COALESCE(p.deposits, msp.deposits, 0) AS deposits,
-            COALESCE(p.eliminations, msp.eliminations, 0) AS eliminations,
-            COALESCE(p.wart_distance, msp.wart_distance, 0) AS wart_distance
+            COALESCE(msp.deposits, p.deposits, 0) AS deposits,
+            COALESCE(msp.eliminations, p.eliminations, 0) AS eliminations,
+            COALESCE(msp.wart_distance, p.wart_distance, 0) AS wart_distance
         FROM matches m
         JOIN match_players mp ON mp.match_id = m.match_id
         LEFT JOIN match_stats_players msp

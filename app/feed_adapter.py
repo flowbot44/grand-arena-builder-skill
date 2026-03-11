@@ -332,6 +332,27 @@ class FeedAdapter:
             }
         return stats_by_token_team, perf_avg
 
+    @staticmethod
+    def _resolve_stat_line(
+        stats_by_token_team: Dict[Tuple[int, Any], Dict[str, Any]],
+        perf_avg: Dict[int, Dict[str, float]],
+        token_id: int,
+        team: Any,
+    ) -> Dict[str, float]:
+        stats = stats_by_token_team.get((int(token_id), team))
+        if stats:
+            return {
+                "deposits": float(stats.get("deposits", 0.0) or 0.0),
+                "eliminations": float(stats.get("eliminations", 0.0) or 0.0),
+                "wart_distance": float(stats.get("wart_distance", 0.0) or 0.0),
+            }
+        perf = perf_avg.get(int(token_id), {})
+        return {
+            "deposits": float(perf.get("deposits", 0.0) or 0.0),
+            "eliminations": float(perf.get("eliminations", 0.0) or 0.0),
+            "wart_distance": float(perf.get("wart_distance", 0.0) or 0.0),
+        }
+
     def _payloads_for_dates(self, dates: List[str]) -> Tuple[List[Dict[str, Any]], FeedMeta]:
         if not dates:
             latest, latest_meta = self.get_latest_manifest()
@@ -384,16 +405,10 @@ class FeedAdapter:
                 won = team_won is not None and team_won == player.get("team")
                 if won:
                     row["wins"] += 1
-                perf = perf_avg.get(token_id)
-                if perf is not None:
-                    deposits = float(perf.get("deposits", 0.0) or 0.0)
-                    eliminations = float(perf.get("eliminations", 0.0) or 0.0)
-                    wart_distance = float(perf.get("wart_distance", 0.0) or 0.0)
-                else:
-                    stats = stats_by_token_team.get((token_id, player.get("team")), {})
-                    deposits = float(stats.get("deposits", 0.0) or 0.0)
-                    eliminations = float(stats.get("eliminations", 0.0) or 0.0)
-                    wart_distance = float(stats.get("wart_distance", 0.0) or 0.0)
+                stat_line = self._resolve_stat_line(stats_by_token_team, perf_avg, token_id, player.get("team"))
+                deposits = stat_line["deposits"]
+                eliminations = stat_line["eliminations"]
+                wart_distance = stat_line["wart_distance"]
                 row["points_total"] += (deposits * 50.0) + (eliminations * 80.0) + (math.floor(wart_distance / 80.0) * 45.0) + (
                     300.0 if won else 0.0
                 )
@@ -459,16 +474,10 @@ class FeedAdapter:
                 won = team_won is not None and team_won == player.get("team")
                 if won:
                     row["wins"] += 1
-                perf = perf_avg.get(token_id)
-                if perf is not None:
-                    deposits = float(perf.get("deposits", 0.0) or 0.0)
-                    eliminations = float(perf.get("eliminations", 0.0) or 0.0)
-                    wart = float(perf.get("wart_distance", 0.0) or 0.0)
-                else:
-                    stat = stats_by_token_team.get((token_id, player.get("team")), {})
-                    deposits = float(stat.get("deposits", 0.0) or 0.0)
-                    eliminations = float(stat.get("eliminations", 0.0) or 0.0)
-                    wart = float(stat.get("wart_distance", 0.0) or 0.0)
+                stat_line = self._resolve_stat_line(stats_by_token_team, perf_avg, token_id, player.get("team"))
+                deposits = stat_line["deposits"]
+                eliminations = stat_line["eliminations"]
+                wart = stat_line["wart_distance"]
                 row["points_total"] += (deposits * 50.0) + (eliminations * 80.0) + (math.floor(wart / 80.0) * 45.0) + (
                     300.0 if won else 0.0
                 )
@@ -523,16 +532,10 @@ class FeedAdapter:
                     total_wins += 1
                 else:
                     total_losses += 1
-                perf = perf_avg.get(int(token_id))
-                if perf is not None:
-                    deposits = float(perf.get("deposits", 0.0) or 0.0)
-                    eliminations = float(perf.get("eliminations", 0.0) or 0.0)
-                    wart_distance = float(perf.get("wart_distance", 0.0) or 0.0)
-                else:
-                    stats = stats_by_token_team.get((int(token_id), player.get("team")), {})
-                    deposits = float(stats.get("deposits", 0.0) or 0.0)
-                    eliminations = float(stats.get("eliminations", 0.0) or 0.0)
-                    wart_distance = float(stats.get("wart_distance", 0.0) or 0.0)
+                stat_line = self._resolve_stat_line(stats_by_token_team, perf_avg, int(token_id), player.get("team"))
+                deposits = stat_line["deposits"]
+                eliminations = stat_line["eliminations"]
+                wart_distance = stat_line["wart_distance"]
                 points = (deposits * 50.0) + (eliminations * 80.0) + (math.floor(wart_distance / 80.0) * 45.0) + (
                     300.0 if won else 0.0
                 )

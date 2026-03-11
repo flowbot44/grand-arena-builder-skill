@@ -33,9 +33,9 @@ def recompute_champion_metrics(conn: sqlite3.Connection) -> None:
             SUM(CASE WHEN m.team_won = mp.team THEN 1 ELSE 0 END) AS wins,
             CASE WHEN COUNT(*) > 0 THEN CAST(SUM(CASE WHEN m.team_won = mp.team THEN 1 ELSE 0 END) AS REAL) / COUNT(*) ELSE NULL END AS win_pct,
             AVG(msp.points) AS avg_points,
-            AVG(p.eliminations) AS avg_eliminations,
-            AVG(p.deposits) AS avg_deposits,
-            AVG(p.wart_distance) AS avg_wart_distance,
+            AVG(COALESCE(msp.eliminations, p.eliminations)) AS avg_eliminations,
+            AVG(COALESCE(msp.deposits, p.deposits)) AS avg_deposits,
+            AVG(COALESCE(msp.wart_distance, p.wart_distance)) AS avg_wart_distance,
             ? AS updated_at
         FROM match_players mp
         JOIN matches m ON m.match_id = mp.match_id
@@ -435,9 +435,9 @@ def build_champion_history(conn: sqlite3.Connection, token_id: int) -> Dict[str,
             m.team_won,
             mp.team,
             m.win_type,
-            COALESCE(p.deposits, msp.deposits, 0) AS deposits,
-            COALESCE(p.eliminations, msp.eliminations, 0) AS eliminations,
-            COALESCE(p.wart_distance, msp.wart_distance, 0) AS wart_distance
+            COALESCE(msp.deposits, p.deposits, 0) AS deposits,
+            COALESCE(msp.eliminations, p.eliminations, 0) AS eliminations,
+            COALESCE(msp.wart_distance, p.wart_distance, 0) AS wart_distance
         FROM matches m
         JOIN match_players mp ON mp.match_id = m.match_id
         LEFT JOIN match_stats_players msp
@@ -576,9 +576,9 @@ def build_non_champion_history(conn: sqlite3.Connection, token_id: int) -> Dict[
             m.team_won,
             mp.team,
             m.win_type,
-            COALESCE(p.deposits, msp.deposits, 0) AS deposits,
-            COALESCE(p.eliminations, msp.eliminations, 0) AS eliminations,
-            COALESCE(p.wart_distance, msp.wart_distance, 0) AS wart_distance
+            COALESCE(msp.deposits, p.deposits, 0) AS deposits,
+            COALESCE(msp.eliminations, p.eliminations, 0) AS eliminations,
+            COALESCE(msp.wart_distance, p.wart_distance, 0) AS wart_distance
         FROM matches m
         JOIN match_players mp ON mp.match_id = m.match_id
         LEFT JOIN match_stats_players msp
@@ -844,9 +844,9 @@ def build_champion_match_info(conn: sqlite3.Connection, token_id: int) -> Dict[s
                 mp.team,
                 mp.is_champion,
                 mp.class,
-                COALESCE(p.deposits, msp.deposits, 0) AS deposits,
-                COALESCE(p.eliminations, msp.eliminations, 0) AS eliminations,
-                COALESCE(p.wart_distance, msp.wart_distance, 0) AS wart_distance
+                COALESCE(msp.deposits, p.deposits, 0) AS deposits,
+                COALESCE(msp.eliminations, p.eliminations, 0) AS eliminations,
+                COALESCE(msp.wart_distance, p.wart_distance, 0) AS wart_distance
             FROM match_players mp
             LEFT JOIN match_stats_players msp
                 ON msp.match_id = mp.match_id AND msp.token_id = mp.token_id
