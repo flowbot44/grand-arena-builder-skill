@@ -383,14 +383,16 @@ Workflow file: `.github/workflows/publish-feed.yml`
 
 One-time recovery mode:
 
-- Manual dispatch now accepts an optional `recovery_from` input.
+- Manual dispatch now accepts optional `recovery_from` and `recovery_to` inputs.
 - If provided, the workflow:
-  - runs the normal hourly ingest first
-  - backfills from `recovery_from` through today (UTC)
+  - skips the normal hourly ingest path
+  - backfills from `recovery_from` through `recovery_to` (UTC), or through today if `recovery_to` is omitted
   - exports the feed with the recovered data still present in SQLite
   - re-prunes SQLite back to the normal 5-day rolling window after export
-- Example recovery input to rebuild back to Monday, March 2, 2026:
+- For larger recoveries, run bounded chunks rather than one long backfill to avoid GitHub Actions timeouts.
+- Example recovery inputs to rebuild back to Monday, March 2, 2026:
   - `recovery_from=2026-03-02`
+  - `recovery_to=2026-03-04`
 
 Required secret:
 
