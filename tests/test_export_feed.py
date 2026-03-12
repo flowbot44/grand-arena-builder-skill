@@ -139,6 +139,86 @@ class ExportFeedTests(unittest.TestCase):
         self.assertEqual(latest["moki_totals"]["count"], 2)
         self.assertEqual(len(latest["moki_totals"]["sha256"]), 64)
 
+    def test_export_fails_when_immutable_raw_partition_is_missing(self) -> None:
+        self._insert_seed_data()
+        export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
+
+        missing_path = self.out_dir / "partitions" / "raw_matches_2026-02-20.json.gz"
+        missing_path.unlink()
+
+        with self.assertRaisesRegex(FileNotFoundError, "Missing preserved raw partition"):
+            export_feed(
+                self.conn,
+                out_dir=self.out_dir,
+                days=7,
+                today=date(2026, 2, 26),
+                mutable_days_back=2,
+                cumulative_mutable_days_back=2,
+            )
+
+    def test_export_fails_when_immutable_cumulative_seed_is_missing(self) -> None:
+        self._insert_seed_data()
+        export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
+
+        missing_seed = self.out_dir / "cumulative" / "daily_totals_2026-02-23.json.gz"
+        missing_seed.unlink()
+
+        with self.assertRaisesRegex(FileNotFoundError, "Missing cumulative seed file"):
+            export_feed(
+                self.conn,
+                out_dir=self.out_dir,
+                days=7,
+                today=date(2026, 2, 26),
+                mutable_days_back=2,
+                cumulative_mutable_days_back=2,
+            )
+
+    def test_export_can_refresh_only_requested_raw_dates_and_skip_cumulative(self) -> None:
+        self._insert_seed_data()
+        export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
+
+        baseline_old = _read_gzip_json(self.out_dir / "partitions" / "raw_matches_2026-02-25.json.gz")
+        baseline_new = _read_gzip_json(self.out_dir / "partitions" / "raw_matches_2026-02-26.json.gz")
+        cumulative_before = (self.out_dir / "cumulative" / "current_totals.json.gz").read_bytes()
+
+        self.conn.execute(
+            """
+            INSERT INTO matches (
+                match_id, game_type, match_date, state, is_bye, team_won, win_type, updated_at, last_seen_at
+            ) VALUES
+                ('m3', 'mokiMayhem', '2026-02-26', 'scheduled', 0, NULL, NULL, '2026-02-26T11:00:00Z', '2026-02-26T11:00:00Z')
+            """
+        )
+        self.conn.execute(
+            """
+            INSERT INTO match_players (
+                match_id, moki_id, token_id, team, name, class, image_url, is_champion
+            ) VALUES
+                ('m3', 'mk-444', 444, 1, 'Delta', 'Center', '', 0),
+                ('m3', 'mk-555', 555, 2, 'Echo', 'Support', '', 0)
+            """
+        )
+        self.conn.commit()
+
+        export_feed(
+            self.conn,
+            out_dir=self.out_dir,
+            days=7,
+            today=date(2026, 2, 26),
+            raw_refresh_start=date(2026, 2, 26),
+            raw_refresh_end=date(2026, 2, 26),
+            export_cumulative=False,
+        )
+
+        refreshed_old = _read_gzip_json(self.out_dir / "partitions" / "raw_matches_2026-02-25.json.gz")
+        refreshed_new = _read_gzip_json(self.out_dir / "partitions" / "raw_matches_2026-02-26.json.gz")
+        cumulative_after = (self.out_dir / "cumulative" / "current_totals.json.gz").read_bytes()
+
+        self.assertEqual(baseline_old, refreshed_old)
+        self.assertEqual(len(baseline_new), 1)
+        self.assertEqual(len(refreshed_new), 2)
+        self.assertEqual(cumulative_before, cumulative_after)
+
 
 if __name__ == "__main__":
     unittest.main()

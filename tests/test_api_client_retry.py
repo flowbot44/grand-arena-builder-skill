@@ -36,6 +36,12 @@ class ApiClientRetryTests(unittest.TestCase):
             with patch("app.api_client.time.sleep", return_value=None):
                 payload = client.list_matches("2026-02-28", page=1, limit=100)
         self.assertIn("data", payload)
+        telemetry = client.telemetry_snapshot()
+        self.assertEqual(telemetry["attempts"], 2)
+        self.assertEqual(telemetry["successes"], 1)
+        self.assertEqual(telemetry["timeouts"], 1)
+        self.assertEqual(telemetry["retries"], 1)
+        self.assertGreaterEqual(telemetry["backoff_sleep_seconds"], 1.0)
 
     def test_list_matches_defaults_to_desc_order(self) -> None:
         limiter = RateLimiter(max_per_minute=1000, min_interval_seconds=0.0, now_fn=lambda: 0.0, sleep_fn=lambda _x: None)

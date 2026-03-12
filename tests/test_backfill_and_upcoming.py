@@ -164,6 +164,7 @@ class BackfillAndUpcomingTests(unittest.TestCase):
             4,
         )
         self.assertEqual(self.conn.execute("SELECT COUNT(*) AS c FROM performances WHERE match_id = 'm1'").fetchone()["c"], 2)
+        self.assertTrue(details["recomputed_metrics"])
 
     def test_seed_champions_skips_rewrite_when_file_is_unchanged(self) -> None:
         service = self._seeded_service()
@@ -200,6 +201,17 @@ class BackfillAndUpcomingTests(unittest.TestCase):
         self.assertTrue(payload["insufficient_upcoming"])
         self.assertLess(len(payload["matches"]), 10)
         self.assertIn("opponent_team_support_win_pct", payload["matches"][0]["components"])
+
+    def test_run_date_range_can_skip_metrics_recompute(self) -> None:
+        service = self._seeded_service()
+        details = service.run_date_range(
+            date(2026, 2, 19),
+            date(2026, 2, 21),
+            recompute_metrics_at_end=False,
+        )
+
+        self.assertFalse(details["recomputed_metrics"])
+        self.assertEqual(self.conn.execute("SELECT COUNT(*) AS c FROM champion_metrics").fetchone()["c"], 0)
 
     def test_recompute_metrics_falls_back_to_match_stats_without_performances(self) -> None:
         service = self._seeded_service()

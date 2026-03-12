@@ -53,6 +53,10 @@ class IngestionService:
         self._champion_token_ids: set[int] = set()
         self._force_full_refresh = False
 
+    def _attach_api_telemetry(self, details: Dict[str, Any]) -> None:
+        if hasattr(self.client, "telemetry_snapshot"):
+            details["api"] = self.client.telemetry_snapshot()
+
     def seed_champions(self) -> int:
         raw = self._read_champions_file()
         champions_hash = hashlib.sha256(raw).hexdigest()
@@ -390,7 +394,14 @@ class IngestionService:
 
         return upserts
 
-    def run_date_range(self, start: date, end: date, *, force_full_refresh: bool = False) -> Dict[str, Any]:
+    def run_date_range(
+        self,
+        start: date,
+        end: date,
+        *,
+        force_full_refresh: bool = False,
+        recompute_metrics_at_end: bool = True,
+    ) -> Dict[str, Any]:
         started_at = utc_now_iso()
         run_id = self.conn.execute(
             "INSERT INTO ingestion_runs (started_at, status) VALUES (?, ?)",
@@ -403,6 +414,7 @@ class IngestionService:
             "end": end.isoformat(),
             "by_date": {},
             "seeded_champions": self.seed_champions(),
+            "recomputed_metrics": False,
         }
         should_recompute_metrics = False
 
@@ -419,8 +431,10 @@ class IngestionService:
                     )
                 )
 
-            if should_recompute_metrics:
+            if recompute_metrics_at_end and should_recompute_metrics:
                 recompute_champion_metrics(self.conn)
+                details["recomputed_metrics"] = True
+            self._attach_api_telemetry(details)
             finished_at = utc_now_iso()
             self.conn.execute(
                 "UPDATE ingestion_runs SET finished_at = ?, status = ?, details_json = ? WHERE run_id = ?",
@@ -431,6 +445,7 @@ class IngestionService:
         except Exception as exc:
             finished_at = utc_now_iso()
             details["error"] = str(exc)
+            self._attach_api_telemetry(details)
             self.conn.execute(
                 "UPDATE ingestion_runs SET finished_at = ?, status = ?, details_json = ? WHERE run_id = ?",
                 (finished_at, "failed", json.dumps(details, separators=(",", ":")), run_id),
@@ -512,7 +527,9 @@ class IngestionService:
             "processed_matches": processed,
             "stats_upserts": stats_upserts,
             "perf_upserts": perf_upserts,
+            "recomputed_metrics": processed > 0,
         }
+        self._attach_api_telemetry(details)
         finished_at = utc_now_iso()
         self.conn.execute(
             "UPDATE ingestion_runs SET finished_at = ?, status = ?, details_json = ? WHERE run_id = ?",
@@ -536,11 +553,18 @@ def build_client() -> GrandArenaClient:
     )
 
 
-def run_backfill(db_path: str, start: date, end: date, champions_path: str) -> Dict[str, Any]:
+def run_backfill(
+    db_path: str,
+    start: date,
+    end: date,
+    champions_path: str,
+    *,
+    recompute_metrics_at_end: bool = True,
+) -> Dict[str, Any]:
     conn = get_connection(db_path)
     init_db(conn)
     service = IngestionService(conn, build_client(), champions_path=champions_path)
-    return service.run_date_range(start, end, force_full_refresh=True)
+    return service.run_date_range(start, end, force_full_refresh=True, recompute_metrics_at_end=recompute_metrics_at_end)
 
 
 def run_hourly(db_path: str, today: date, champions_path: str) -> Dict[str, Any]:
@@ -565,13 +589,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--to", dest="to_date", default=utc_today_iso(), help="Backfill end date YYYY-MM-DD")
     parser.add_argument("--today", dest="today", default=utc_today_iso(), help="Override today for hourly window")
     parser.add_argument("--max-matches", dest="max_matches", type=int, default=0, help="Max matches to enrich in enrich-only mode (0 = no limit)")
+    parser.add_argument(
+        "--skip-metrics-recompute",
+        action="store_true",
+        help="Skip recomputing champion_metrics at the end of the run",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     if args.command == "backfill":
-        details = run_backfill(args.db, parse_date(args.from_date), parse_date(args.to_date), args.champions)
+        details = run_backfill(
+            args.db,
+            parse_date(args.from_date),
+            parse_date(args.to_date),
+            args.champions,
+            recompute_metrics_at_end=not args.skip_metrics_recompute,
+        )
     elif args.command == "enrich-only":
         conn = get_connection(args.db)
         init_db(conn)

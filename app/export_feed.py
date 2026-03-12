@@ -288,6 +288,9 @@ def export_feed(
     mutable_days_back: Optional[int] = None,
     mutable_days_forward: Optional[int] = None,
     cumulative_mutable_days_back: Optional[int] = None,
+    raw_refresh_start: Optional[date] = None,
+    raw_refresh_end: Optional[date] = None,
+    export_cumulative: bool = True,
 ) -> Dict[str, Any]:
     start = window_start(today, days)
     raw_end = today + timedelta(days=max(0, int(lookahead_days)))
@@ -313,10 +316,21 @@ def export_feed(
     raw_mutable_forward = max(0, int(mutable_days_forward if mutable_days_forward is not None else lookahead_days))
     raw_mutable_start = max(start, today - timedelta(days=raw_mutable_back))
     raw_mutable_end = today + timedelta(days=raw_mutable_forward)
+    explicit_raw_refresh = raw_refresh_start is not None or raw_refresh_end is not None
+    if raw_refresh_start is None:
+        raw_refresh_start = start
+    if raw_refresh_end is None:
+        raw_refresh_end = raw_end
 
     for day_iso in raw_calendar_dates:
         day_value = date.fromisoformat(day_iso)
-        should_refresh = raw_full_refresh or (raw_mutable_start <= day_value <= raw_mutable_end)
+        should_refresh = (
+            raw_full_refresh
+            if not explicit_raw_refresh
+            else raw_refresh_start <= day_value <= raw_refresh_end
+        )
+        if not explicit_raw_refresh and not raw_full_refresh:
+            should_refresh = raw_mutable_start <= day_value <= raw_mutable_end
         rel_path = Path("partitions") / f"raw_matches_{day_iso}.json.gz"
         abs_path = out_dir / rel_path
 
@@ -328,6 +342,9 @@ def export_feed(
             if abs_path.exists():
                 partition_entries.append(_raw_partition_entry_from_file(day_iso, abs_path))
                 continue
+            raise FileNotFoundError(
+                f"Missing preserved raw partition for immutable date {day_iso}: {abs_path}"
+            )
 
         match_rows = _match_rows_for_date(conn, day_iso)
         payload_matches: List[Dict[str, Any]] = []
@@ -364,6 +381,39 @@ def export_feed(
     if moki_totals_path.exists():
         raw_manifest["moki_totals"] = _moki_totals_entry_from_file(moki_totals_path)
     _write_json(out_dir / "latest.json", raw_manifest)
+
+    cumulative_files_count = 0
+    current_player_count = 0
+    if not export_cumulative:
+        status_payload = {
+            "generated_at_utc": utc_now_iso(),
+            "window_days": days,
+            "lookahead_days": max(0, int(lookahead_days)),
+            "window_start": start.isoformat(),
+            "window_end": raw_end.isoformat(),
+            "cumulative_window_end": today.isoformat(),
+            "raw_dates": raw_calendar_dates,
+            "latest_ingestion_run": dict(
+                conn.execute(
+                    """
+                    SELECT run_id, started_at, finished_at, status, details_json
+                    FROM ingestion_runs
+                    ORDER BY run_id DESC
+                    LIMIT 1
+                    """
+                ).fetchone()
+                or {}
+            ) or None,
+        }
+        _write_json(out_dir / "status.json", status_payload)
+        return {
+            "window_start": start.isoformat(),
+            "window_end": raw_end.isoformat(),
+            "raw_partitions": len(partition_entries),
+            "cumulative_files": cumulative_files_count,
+            "current_player_count": current_player_count,
+            "output_dir": str(out_dir),
+        }
 
     prior_cumulative_manifest = _read_json_if_exists(out_dir / "cumulative" / "latest.json") or {}
     prior_cumulative_by_date = {
@@ -410,14 +460,19 @@ def export_feed(
                         elif abs_path.exists():
                             cumulative_entries.append(_cumulative_entry_from_file(day_iso, abs_path))
                         else:
-                            running.clear()
-                            cumulative_entries = []
-                            break
+                            raise FileNotFoundError(
+                                f"Missing preserved cumulative file for immutable date {day_iso}: {abs_path}"
+                            )
                     if running:
                         cumulative_compute_start = cumulative_mutable_start
             except Exception:
                 running.clear()
                 cumulative_entries = []
+                raise
+        else:
+            raise FileNotFoundError(
+                f"Missing cumulative seed file for immutable range: {seed_path}"
+            )
 
     scored_rows = _scored_rows_for_window(conn, cumulative_compute_start.isoformat(), today.isoformat())
     by_date: Dict[str, List[sqlite3.Row]] = {}
@@ -558,6 +613,9 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="If set, only refresh cumulative files from today-N days onward; older cumulative files are reused.",
     )
+    parser.add_argument("--raw-refresh-start", default=None, help="Explicit raw partition refresh start date YYYY-MM-DD")
+    parser.add_argument("--raw-refresh-end", default=None, help="Explicit raw partition refresh end date YYYY-MM-DD")
+    parser.add_argument("--skip-cumulative", action="store_true", help="Skip rebuilding cumulative outputs during export")
     parser.add_argument("--today", default=utc_today_iso(), help="UTC date override YYYY-MM-DD")
     return parser.parse_args()
 
@@ -575,6 +633,9 @@ def main() -> int:
         mutable_days_back=args.mutable_days_back,
         mutable_days_forward=args.mutable_days_forward,
         cumulative_mutable_days_back=args.cumulative_mutable_days_back,
+        raw_refresh_start=date.fromisoformat(args.raw_refresh_start) if args.raw_refresh_start else None,
+        raw_refresh_end=date.fromisoformat(args.raw_refresh_end) if args.raw_refresh_end else None,
+        export_cumulative=not args.skip_cumulative,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0
