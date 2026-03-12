@@ -386,7 +386,7 @@ One-time recovery mode:
 - Manual dispatch now accepts optional `recovery_from` and `recovery_to` inputs.
 - If provided, the workflow:
   - skips the normal hourly ingest path
-  - backfills from `recovery_from` through `recovery_to` (UTC), or through today if `recovery_to` is omitted
+  - backfills from the earlier of `recovery_from` or the current 30-day export window start, through `recovery_to` (UTC), or through today if `recovery_to` is omitted
   - exports the feed with the recovered data still present in SQLite
   - re-prunes SQLite back to the normal 5-day rolling window after export
 - For larger recoveries, run bounded chunks rather than one long backfill to avoid GitHub Actions timeouts.
