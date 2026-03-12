@@ -126,14 +126,9 @@ jobs:
       - name: One-Time Recovery Backfill
         if: ${{ env.RECOVERY_FROM != '' }}
         run: |
-          EXPORT_WINDOW_START="$(date -u -d '29 days ago' +%F)"
           RECOVERY_END="${RECOVERY_TO:-$(date -u +%F)}"
-          BACKFILL_FROM="${RECOVERY_FROM}"
-          if [[ "${EXPORT_WINDOW_START}" < "${BACKFILL_FROM}" ]]; then
-            BACKFILL_FROM="${EXPORT_WINDOW_START}"
-          fi
-          echo "Running one-time recovery backfill from ${BACKFILL_FROM} to ${RECOVERY_END} (UTC)"
-          python -m app.ingest backfill --db state/grandarena.db --from "${BACKFILL_FROM}" --to "${RECOVERY_END}" --skip-metrics-recompute
+          echo "Running one-time recovery backfill from ${RECOVERY_FROM} to ${RECOVERY_END} (UTC)"
+          python -m app.ingest backfill --db state/grandarena.db --from "${RECOVERY_FROM}" --to "${RECOVERY_END}" --skip-metrics-recompute
 
       - name: Prune Rolling Window
         if: ${{ env.RECOVERY_FROM == '' }}
