@@ -139,39 +139,45 @@ class ExportFeedTests(unittest.TestCase):
         self.assertEqual(latest["moki_totals"]["count"], 2)
         self.assertEqual(len(latest["moki_totals"]["sha256"]), 64)
 
-    def test_export_fails_when_immutable_raw_partition_is_missing(self) -> None:
+    def test_export_rebuilds_when_immutable_raw_partition_is_missing(self) -> None:
         self._insert_seed_data()
         export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
 
         missing_path = self.out_dir / "partitions" / "raw_matches_2026-02-20.json.gz"
         missing_path.unlink()
 
-        with self.assertRaisesRegex(FileNotFoundError, "Missing preserved raw partition"):
-            export_feed(
-                self.conn,
-                out_dir=self.out_dir,
-                days=7,
-                today=date(2026, 2, 26),
-                mutable_days_back=2,
-                cumulative_mutable_days_back=2,
-            )
+        export_feed(
+            self.conn,
+            out_dir=self.out_dir,
+            days=7,
+            today=date(2026, 2, 26),
+            mutable_days_back=2,
+            cumulative_mutable_days_back=2,
+        )
 
-    def test_export_fails_when_immutable_cumulative_seed_is_missing(self) -> None:
+        self.assertTrue(missing_path.exists())
+        rebuilt_rows = _read_gzip_json(missing_path)
+        self.assertEqual(rebuilt_rows, [])
+
+    def test_export_rebuilds_when_immutable_cumulative_seed_is_missing(self) -> None:
         self._insert_seed_data()
         export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
 
         missing_seed = self.out_dir / "cumulative" / "daily_totals_2026-02-23.json.gz"
         missing_seed.unlink()
 
-        with self.assertRaisesRegex(FileNotFoundError, "Missing cumulative seed file"):
-            export_feed(
-                self.conn,
-                out_dir=self.out_dir,
-                days=7,
-                today=date(2026, 2, 26),
-                mutable_days_back=2,
-                cumulative_mutable_days_back=2,
-            )
+        export_feed(
+            self.conn,
+            out_dir=self.out_dir,
+            days=7,
+            today=date(2026, 2, 26),
+            mutable_days_back=2,
+            cumulative_mutable_days_back=2,
+        )
+
+        self.assertTrue(missing_seed.exists())
+        rebuilt_seed_rows = _read_gzip_json(missing_seed)
+        self.assertEqual(rebuilt_seed_rows, [])
 
     def test_export_can_refresh_only_requested_raw_dates_and_skip_cumulative(self) -> None:
         self._insert_seed_data()

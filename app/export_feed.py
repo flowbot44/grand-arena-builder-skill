@@ -342,9 +342,9 @@ def export_feed(
             if abs_path.exists():
                 partition_entries.append(_raw_partition_entry_from_file(day_iso, abs_path))
                 continue
-            raise FileNotFoundError(
-                f"Missing preserved raw partition for immutable date {day_iso}: {abs_path}"
-            )
+            # If a preserved partition is missing, rebuild it from SQLite rather than
+            # failing the whole export. This keeps scheduled publishes resilient when
+            # the prior feed artifact is unavailable or incomplete.
 
         match_rows = _match_rows_for_date(conn, day_iso)
         payload_matches: List[Dict[str, Any]] = []
@@ -434,6 +434,7 @@ def export_feed(
     if not cumulative_full_refresh and cumulative_mutable_start > start:
         seed_day = cumulative_mutable_start - timedelta(days=1)
         seed_path = out_dir / "cumulative" / f"daily_totals_{seed_day.isoformat()}.json.gz"
+        reuse_cumulative_seed = False
         if seed_path.exists():
             try:
                 seed_rows = _read_gzip_json(seed_path)
@@ -465,14 +466,14 @@ def export_feed(
                             )
                     if running:
                         cumulative_compute_start = cumulative_mutable_start
+                        reuse_cumulative_seed = True
             except Exception:
                 running.clear()
                 cumulative_entries = []
-                raise
-        else:
-            raise FileNotFoundError(
-                f"Missing cumulative seed file for immutable range: {seed_path}"
-            )
+        if not reuse_cumulative_seed:
+            running.clear()
+            cumulative_entries = []
+            cumulative_compute_start = start
 
     scored_rows = _scored_rows_for_window(conn, cumulative_compute_start.isoformat(), today.isoformat())
     by_date: Dict[str, List[sqlite3.Row]] = {}
