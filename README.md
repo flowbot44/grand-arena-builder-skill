@@ -404,7 +404,7 @@ Required secret:
 - `GRANDARENA_API_KEY`
 - `SEED_DB_URL` (optional, only used when no DB artifact is available)
 
-### 30-day feed with 5-day DB window
+### Archive feed with 5-day DB window
 
 `app.maintenance` keeps only a rolling 5-day window in DB (`today-2` through `today+2`) by deleting match-linked rows older than the cutoff date:
 
@@ -419,8 +419,10 @@ Raw partition exports are generated per day:
 
 Publish behavior for raw partitions:
 
-- Days older than `today-2` inside the 30-day window are reused from prior exports when available.
-- Only `today-2`, `today-1`, `today`, `today+1`, and `today+2` are refreshed each run.
+- The SQLite DB is still pruned to the rolling 5-day window.
+- Published raw partition files are retained as archives and continue to accumulate over time.
+- Scheduled runs only refresh `today-2`, `today-1`, `today`, `today+1`, and `today+2`.
+- Manual recovery runs only refresh the requested recovery date range.
 
 These files are designed for website/API consumers that need recent raw match/player/stats/performance data without reprocessing all days every run.
 

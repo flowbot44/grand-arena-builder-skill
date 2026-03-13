@@ -309,6 +309,10 @@ def export_feed(
         for entry in prior_raw_manifest.get("partitions", [])
         if isinstance(entry, dict) and entry.get("date")
     }
+    explicit_raw_dates: List[str] = []
+    if raw_refresh_start is not None and raw_refresh_end is not None:
+        explicit_raw_dates = [d.isoformat() for d in date_range(raw_refresh_start, raw_refresh_end)]
+    manifest_raw_dates = sorted(set(raw_calendar_dates) | set(prior_raw_by_date.keys()) | set(explicit_raw_dates))
 
     partition_entries: List[Dict[str, Any]] = []
     raw_full_refresh = mutable_days_back is None and mutable_days_forward is None
@@ -322,7 +326,7 @@ def export_feed(
     if raw_refresh_end is None:
         raw_refresh_end = raw_end
 
-    for day_iso in raw_calendar_dates:
+    for day_iso in manifest_raw_dates:
         day_value = date.fromisoformat(day_iso)
         should_refresh = (
             raw_full_refresh
@@ -336,16 +340,16 @@ def export_feed(
 
         if not should_refresh:
             prior_entry = prior_raw_by_date.get(day_iso)
-            if prior_entry and abs_path.exists():
+            if prior_entry:
                 partition_entries.append(dict(prior_entry))
                 continue
             if abs_path.exists():
                 partition_entries.append(_raw_partition_entry_from_file(day_iso, abs_path))
                 continue
             if explicit_raw_refresh:
-                _write_gzip_json(abs_path, [])
-                partition_entries.append(_raw_partition_entry_from_file(day_iso, abs_path))
-                continue
+                raise FileNotFoundError(
+                    f"Missing preserved raw partition for immutable date {day_iso}: {abs_path}"
+                )
             # If a preserved partition is missing, rebuild it from SQLite rather than
             # failing the whole export. This keeps scheduled publishes resilient when
             # the prior feed artifact is unavailable or incomplete.
@@ -369,6 +373,11 @@ def export_feed(
             if int(existing_entry.get("match_count") or 0) > 0:
                 partition_entries.append(existing_entry)
                 continue
+        if preserve_existing_partition and not payload_matches and explicit_raw_refresh:
+            prior_entry = prior_raw_by_date.get(day_iso)
+            if prior_entry and int(prior_entry.get("match_count") or 0) > 0:
+                partition_entries.append(dict(prior_entry))
+                continue
 
         _write_gzip_json(abs_path, payload_matches)
         partition_entries.append(
@@ -385,7 +394,7 @@ def export_feed(
         "generated_at_utc": utc_now_iso(),
         "window_days": days,
         "lookahead_days": max(0, int(lookahead_days)),
-        "available_dates": raw_calendar_dates,
+        "available_dates": manifest_raw_dates,
         "partitions": partition_entries,
     }
     moki_totals_path = out_dir / "moki_totals.json"
@@ -403,7 +412,7 @@ def export_feed(
             "window_start": start.isoformat(),
             "window_end": raw_end.isoformat(),
             "cumulative_window_end": today.isoformat(),
-            "raw_dates": raw_calendar_dates,
+            "raw_dates": manifest_raw_dates,
             "latest_ingestion_run": dict(
                 conn.execute(
                     """

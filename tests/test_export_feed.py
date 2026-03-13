@@ -123,6 +123,25 @@ class ExportFeedTests(unittest.TestCase):
         self.assertEqual(support_stats["player_games"]["111"]["games"], 2)
         self.assertEqual(support_stats["player_games"]["111"]["wins"], 1)
 
+    def test_export_preserves_prior_archive_dates_in_latest_manifest(self) -> None:
+        self._insert_seed_data()
+        export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
+
+        export_feed(
+            self.conn,
+            out_dir=self.out_dir,
+            days=7,
+            today=date(2026, 2, 27),
+            raw_refresh_start=date(2026, 2, 25),
+            raw_refresh_end=date(2026, 2, 27),
+            export_cumulative=False,
+        )
+
+        latest = _read_json(self.out_dir / "latest.json")
+        self.assertEqual(latest["available_dates"][0], "2026-02-20")
+        self.assertEqual(latest["available_dates"][-1], "2026-02-27")
+        self.assertEqual(len(latest["available_dates"]), 8)
+
     def test_export_includes_moki_totals_metadata_when_present(self) -> None:
         self._insert_seed_data()
         self.out_dir.mkdir(parents=True, exist_ok=True)
@@ -139,7 +158,7 @@ class ExportFeedTests(unittest.TestCase):
         self.assertEqual(latest["moki_totals"]["count"], 2)
         self.assertEqual(len(latest["moki_totals"]["sha256"]), 64)
 
-    def test_export_rebuilds_when_immutable_raw_partition_is_missing(self) -> None:
+    def test_export_preserves_manifest_entry_when_immutable_raw_partition_is_missing(self) -> None:
         self._insert_seed_data()
         export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
 
@@ -155,11 +174,12 @@ class ExportFeedTests(unittest.TestCase):
             cumulative_mutable_days_back=2,
         )
 
-        self.assertTrue(missing_path.exists())
-        rebuilt_rows = _read_gzip_json(missing_path)
-        self.assertEqual(rebuilt_rows, [])
+        self.assertFalse(missing_path.exists())
+        latest = _read_json(self.out_dir / "latest.json")
+        preserved_entry = next(part for part in latest["partitions"] if part["date"] == "2026-02-20")
+        self.assertEqual(preserved_entry["match_count"], 0)
 
-    def test_explicit_raw_refresh_creates_placeholder_when_untouched_partition_is_missing(self) -> None:
+    def test_explicit_raw_refresh_preserves_manifest_entry_when_untouched_partition_is_missing(self) -> None:
         self._insert_seed_data()
         export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
 
@@ -176,8 +196,10 @@ class ExportFeedTests(unittest.TestCase):
             export_cumulative=False,
         )
 
-        self.assertTrue(missing_path.exists())
-        self.assertEqual(_read_gzip_json(missing_path), [])
+        self.assertFalse(missing_path.exists())
+        latest = _read_json(self.out_dir / "latest.json")
+        preserved_entry = next(part for part in latest["partitions"] if part["date"] == "2026-02-25")
+        self.assertEqual(preserved_entry["match_count"], 1)
 
     def test_export_rebuilds_when_immutable_cumulative_seed_is_missing(self) -> None:
         self._insert_seed_data()

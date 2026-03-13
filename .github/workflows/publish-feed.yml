@@ -236,10 +236,10 @@ jobs:
           today = datetime.now(timezone.utc).date()
           expected_start = (today - timedelta(days=29)).isoformat()
           expected_end = (today + timedelta(days=2)).isoformat()
-          if available_dates[0] != expected_start:
-              raise SystemExit(f"unexpected first available date: {available_dates[0]} != {expected_start}")
           if available_dates[-1] != expected_end:
               raise SystemExit(f"unexpected last available date: {available_dates[-1]} != {expected_end}")
+          if expected_start not in available_dates:
+              raise SystemExit(f"active window start missing from available_dates: {expected_start}")
           if status.get("window_start") != expected_start:
               raise SystemExit(f"unexpected status window_start: {status.get('window_start')} != {expected_start}")
           if status.get("window_end") != expected_end:
