@@ -159,6 +159,24 @@ class ExportFeedTests(unittest.TestCase):
         rebuilt_rows = _read_gzip_json(missing_path)
         self.assertEqual(rebuilt_rows, [])
 
+    def test_explicit_raw_refresh_fails_when_untouched_partition_is_missing(self) -> None:
+        self._insert_seed_data()
+        export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
+
+        missing_path = self.out_dir / "partitions" / "raw_matches_2026-02-25.json.gz"
+        missing_path.unlink()
+
+        with self.assertRaisesRegex(FileNotFoundError, "Missing preserved raw partition"):
+            export_feed(
+                self.conn,
+                out_dir=self.out_dir,
+                days=7,
+                today=date(2026, 2, 26),
+                raw_refresh_start=date(2026, 2, 26),
+                raw_refresh_end=date(2026, 2, 26),
+                export_cumulative=False,
+            )
+
     def test_export_rebuilds_when_immutable_cumulative_seed_is_missing(self) -> None:
         self._insert_seed_data()
         export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))

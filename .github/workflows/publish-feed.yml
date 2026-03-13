@@ -159,14 +159,28 @@ jobs:
               --raw-refresh-end "${RECOVERY_END}" \
               --skip-cumulative
           else
-            python -m app.export_feed \
-              --db state/grandarena.db \
-              --out exports/data \
-              --days 30 \
-              --lookahead-days 2 \
-              --mutable-days-back 2 \
-              --mutable-days-forward 2 \
-              --cumulative-mutable-days-back 2
+            TODAY_UTC="$(date -u +%F)"
+            RAW_REFRESH_START="$(date -u -d '2 days ago' +%F)"
+            RAW_REFRESH_END="$(date -u -d '2 days' +%F)"
+            if [ -f exports/data/latest.json ]; then
+              python -m app.export_feed \
+                --db state/grandarena.db \
+                --out exports/data \
+                --days 30 \
+                --lookahead-days 2 \
+                --raw-refresh-start "${RAW_REFRESH_START}" \
+                --raw-refresh-end "${RAW_REFRESH_END}" \
+                --cumulative-mutable-days-back 2
+            else
+              python -m app.export_feed \
+                --db state/grandarena.db \
+                --out exports/data \
+                --days 30 \
+                --lookahead-days 2 \
+                --mutable-days-back 2 \
+                --mutable-days-forward 2 \
+                --cumulative-mutable-days-back 2
+            fi
           fi
 
       - name: Re-Prune Rolling Window After Recovery Export
