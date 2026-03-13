@@ -343,9 +343,9 @@ def export_feed(
                 partition_entries.append(_raw_partition_entry_from_file(day_iso, abs_path))
                 continue
             if explicit_raw_refresh:
-                raise FileNotFoundError(
-                    f"Missing preserved raw partition for immutable date {day_iso}: {abs_path}"
-                )
+                _write_gzip_json(abs_path, [])
+                partition_entries.append(_raw_partition_entry_from_file(day_iso, abs_path))
+                continue
             # If a preserved partition is missing, rebuild it from SQLite rather than
             # failing the whole export. This keeps scheduled publishes resilient when
             # the prior feed artifact is unavailable or incomplete.
