@@ -225,6 +225,29 @@ class ExportFeedTests(unittest.TestCase):
         self.assertEqual(len(refreshed_new), 2)
         self.assertEqual(cumulative_before, cumulative_after)
 
+    def test_export_preserves_non_empty_old_partition_when_rebuild_is_empty(self) -> None:
+        self._insert_seed_data()
+        export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 3, 1))
+
+        preserved_path = self.out_dir / "partitions" / "raw_matches_2026-02-25.json.gz"
+        preserved_before = _read_gzip_json(preserved_path)
+        self.assertEqual(len(preserved_before), 1)
+
+        self.conn.execute("DELETE FROM performances WHERE match_id = 'm1'")
+        self.conn.execute("DELETE FROM match_stats_players WHERE match_id = 'm1'")
+        self.conn.execute("DELETE FROM match_players WHERE match_id = 'm1'")
+        self.conn.execute("DELETE FROM matches WHERE match_id = 'm1'")
+        self.conn.commit()
+
+        export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 3, 1))
+
+        preserved_after = _read_gzip_json(preserved_path)
+        self.assertEqual(preserved_after, preserved_before)
+
+        latest = _read_json(self.out_dir / "latest.json")
+        preserved_entry = next(part for part in latest["partitions"] if part["date"] == "2026-02-25")
+        self.assertEqual(preserved_entry["match_count"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

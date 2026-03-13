@@ -359,6 +359,13 @@ def export_feed(
                 }
             )
 
+        preserve_existing_partition = day_value < (today - timedelta(days=2))
+        if preserve_existing_partition and not payload_matches and abs_path.exists():
+            existing_entry = _raw_partition_entry_from_file(day_iso, abs_path)
+            if int(existing_entry.get("match_count") or 0) > 0:
+                partition_entries.append(existing_entry)
+                continue
+
         _write_gzip_json(abs_path, payload_matches)
         partition_entries.append(
             {
