@@ -387,12 +387,17 @@ One-time recovery mode:
 - If provided, the workflow:
   - skips the normal hourly ingest path
   - backfills exactly from `recovery_from` through `recovery_to` (UTC), or through today if `recovery_to` is omitted
-  - exports the feed with the recovered data still present in SQLite
+  - exports only the recovered raw partition dates and preserves all other archived partition files unchanged
+  - requires the previously published `grandarena-feed-state` artifact to be restored before export so untouched archive dates remain available
   - re-prunes SQLite back to the normal 5-day rolling window after export
 - For larger recoveries, run bounded chunks rather than one long backfill so each GitHub Actions job can finish before the timeout.
 - Example recovery inputs to rebuild back to Monday, March 2, 2026:
   - `recovery_from=2026-03-02`
   - `recovery_to=2026-03-04`
+- For one-day archive recovery, run the workflow one date at a time, for example:
+  - `recovery_from=2026-03-08`
+  - `recovery_to=2026-03-08`
+  - then `2026-03-07`, then `2026-03-06`, and so on
 
 Required secret:
 
