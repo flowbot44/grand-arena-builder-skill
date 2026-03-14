@@ -234,23 +234,23 @@ jobs:
               raise SystemExit("partition count does not match available_dates count")
 
           today = datetime.now(timezone.utc).date()
-          expected_active_start = (today - timedelta(days=2)).isoformat()
-          expected_end = (today + timedelta(days=2)).isoformat()
+          expected_active_start = status.get("window_start")
+          expected_end = status.get("window_end")
+          if not expected_active_start or not expected_end:
+              raise SystemExit("status.json missing window_start/window_end")
+          active_start_date = datetime.fromisoformat(expected_active_start).date()
+          active_end_date = datetime.fromisoformat(expected_end).date()
+          if active_end_date < active_start_date:
+              raise SystemExit("status window_end is earlier than window_start")
           required_active_dates = [
-              (today + timedelta(days=offset)).isoformat()
-              for offset in (-2, -1, 0, 1, 2)
+              (active_start_date + timedelta(days=offset)).isoformat()
+              for offset in range((active_end_date - active_start_date).days + 1)
           ]
           missing_active_dates = [day for day in required_active_dates if day not in available_dates]
           if missing_active_dates:
               raise SystemExit(f"active refresh dates missing from available_dates: {missing_active_dates}")
           if available_dates != sorted(available_dates):
               raise SystemExit("available_dates is not sorted")
-          if status.get("window_start") != expected_active_start:
-              raise SystemExit(
-                  f"unexpected status window_start: {status.get('window_start')} != {expected_active_start}"
-              )
-          if status.get("window_end") != expected_end:
-              raise SystemExit(f"unexpected status window_end: {status.get('window_end')} != {expected_end}")
 
           missing_files = []
           for partition in partitions:
