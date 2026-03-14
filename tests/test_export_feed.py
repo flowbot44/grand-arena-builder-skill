@@ -219,7 +219,7 @@ class ExportFeedTests(unittest.TestCase):
         self.assertEqual(latest["moki_totals"]["count"], 2)
         self.assertEqual(len(latest["moki_totals"]["sha256"]), 64)
 
-    def test_export_preserves_manifest_entry_when_immutable_raw_partition_is_missing(self) -> None:
+    def test_export_drops_missing_immutable_raw_partition_from_manifest(self) -> None:
         self._insert_seed_data()
         export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
 
@@ -237,10 +237,9 @@ class ExportFeedTests(unittest.TestCase):
 
         self.assertFalse(missing_path.exists())
         latest = _read_json(self.out_dir / "latest.json")
-        preserved_entry = next(part for part in latest["partitions"] if part["date"] == "2026-02-20")
-        self.assertEqual(preserved_entry["match_count"], 0)
+        self.assertNotIn("2026-02-20", latest["available_dates"])
 
-    def test_explicit_raw_refresh_preserves_manifest_entry_when_untouched_partition_is_missing(self) -> None:
+    def test_explicit_raw_refresh_drops_missing_untouched_partition_from_manifest(self) -> None:
         self._insert_seed_data()
         export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
 
@@ -259,8 +258,7 @@ class ExportFeedTests(unittest.TestCase):
 
         self.assertFalse(missing_path.exists())
         latest = _read_json(self.out_dir / "latest.json")
-        preserved_entry = next(part for part in latest["partitions"] if part["date"] == "2026-02-25")
-        self.assertEqual(preserved_entry["match_count"], 1)
+        self.assertNotIn("2026-02-25", latest["available_dates"])
 
     def test_export_rebuilds_when_immutable_cumulative_seed_is_missing(self) -> None:
         self._insert_seed_data()
