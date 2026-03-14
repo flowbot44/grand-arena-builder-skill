@@ -309,11 +309,6 @@ def export_feed(
         for entry in prior_raw_manifest.get("partitions", [])
         if isinstance(entry, dict) and entry.get("date")
     }
-    explicit_raw_dates: List[str] = []
-    if raw_refresh_start is not None and raw_refresh_end is not None:
-        explicit_raw_dates = [d.isoformat() for d in date_range(raw_refresh_start, raw_refresh_end)]
-    manifest_raw_dates = sorted(set(raw_calendar_dates) | set(prior_raw_by_date.keys()) | set(explicit_raw_dates))
-
     partition_entries: List[Dict[str, Any]] = []
     raw_full_refresh = mutable_days_back is None and mutable_days_forward is None
     raw_mutable_back = max(0, int(mutable_days_back or 0))
@@ -325,6 +320,13 @@ def export_feed(
         raw_refresh_start = start
     if raw_refresh_end is None:
         raw_refresh_end = raw_end
+    if explicit_raw_refresh:
+        active_raw_dates = [d.isoformat() for d in date_range(raw_refresh_start, raw_refresh_end)]
+    elif raw_full_refresh:
+        active_raw_dates = list(raw_calendar_dates)
+    else:
+        active_raw_dates = [d.isoformat() for d in date_range(raw_mutable_start, raw_mutable_end)]
+    manifest_raw_dates = sorted(set(prior_raw_by_date.keys()) | set(active_raw_dates))
 
     for day_iso in manifest_raw_dates:
         day_value = date.fromisoformat(day_iso)

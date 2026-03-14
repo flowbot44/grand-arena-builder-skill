@@ -404,6 +404,21 @@ Required secret:
 - `GRANDARENA_API_KEY`
 - `SEED_DB_URL` (optional, only used when no DB artifact is available)
 
+### Operating model
+
+This project uses two different storage roles on purpose:
+
+- SQLite is a short-lived working database for ingest/export and is intentionally pruned to a 5-day rolling window.
+- Published raw partition files under `exports/data/partitions/` are the durable archive and should not be treated like a rolling 30-day cache.
+
+North-star behavior:
+
+- Scheduled runs only refresh the active 5-day mutable window (`today-2` through `today+2`).
+- Manual recovery runs only refresh the exact backfill dates requested.
+- Previously published archive partition dates remain listed in `latest.json` and are not dropped just because they fall outside the current DB window.
+- The DB can be pruned aggressively; the archive files should remain cumulative.
+- When making workflow/export changes, prefer preserving existing archive files over recomputing unrelated historical dates from a pruned DB.
+
 ### Archive feed with 5-day DB window
 
 `app.maintenance` keeps only a rolling 5-day window in DB (`today-2` through `today+2`) by deleting match-linked rows older than the cutoff date:

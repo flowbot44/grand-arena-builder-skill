@@ -142,6 +142,25 @@ class ExportFeedTests(unittest.TestCase):
         self.assertEqual(latest["available_dates"][-1], "2026-02-27")
         self.assertEqual(len(latest["available_dates"]), 8)
 
+    def test_mutable_export_without_prior_manifest_only_publishes_active_dates(self) -> None:
+        self._insert_seed_data()
+        export_feed(
+            self.conn,
+            out_dir=self.out_dir,
+            days=30,
+            today=date(2026, 2, 26),
+            lookahead_days=2,
+            mutable_days_back=2,
+            mutable_days_forward=2,
+            export_cumulative=False,
+        )
+
+        latest = _read_json(self.out_dir / "latest.json")
+        self.assertEqual(
+            latest["available_dates"],
+            ["2026-02-24", "2026-02-25", "2026-02-26", "2026-02-27", "2026-02-28"],
+        )
+
     def test_export_includes_moki_totals_metadata_when_present(self) -> None:
         self._insert_seed_data()
         self.out_dir.mkdir(parents=True, exist_ok=True)
