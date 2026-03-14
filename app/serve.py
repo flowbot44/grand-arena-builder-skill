@@ -598,6 +598,22 @@ def create_app() -> Flask:
                     "cumulative_window_end",
                     available_dates[-1] if available_dates else utc_today_iso(),
                 ),
+                "active_window_start": status.get(
+                    "active_window_start",
+                    status.get("window_start", available_dates[0] if available_dates else utc_today_iso()),
+                ),
+                "active_window_end": status.get(
+                    "active_window_end",
+                    status.get("window_end", available_dates[-1] if available_dates else utc_today_iso()),
+                ),
+                "archive_window_start": status.get(
+                    "archive_window_start",
+                    available_dates[0] if available_dates else utc_today_iso(),
+                ),
+                "archive_window_end": status.get(
+                    "archive_window_end",
+                    available_dates[-1] if available_dates else utc_today_iso(),
+                ),
                 "raw_dates": status.get("raw_dates", available_dates),
                 "latest_ingestion_run": status.get("latest_ingestion_run"),
                 "latest_run": status.get("latest_ingestion_run"),

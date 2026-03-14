@@ -161,6 +161,48 @@ class ExportFeedTests(unittest.TestCase):
             ["2026-02-24", "2026-02-25", "2026-02-26", "2026-02-27", "2026-02-28"],
         )
 
+    def test_status_raw_dates_matches_latest_available_dates(self) -> None:
+        self._insert_seed_data()
+        export_feed(
+            self.conn,
+            out_dir=self.out_dir,
+            days=30,
+            today=date(2026, 2, 26),
+            lookahead_days=2,
+            mutable_days_back=2,
+            mutable_days_forward=2,
+            cumulative_mutable_days_back=2,
+        )
+
+        latest = _read_json(self.out_dir / "latest.json")
+        status = _read_json(self.out_dir / "status.json")
+        self.assertEqual(status["raw_dates"], latest["available_dates"])
+        self.assertEqual(status["window_start"], "2026-02-24")
+        self.assertEqual(status["window_end"], "2026-02-28")
+        self.assertEqual(status["active_window_start"], "2026-02-24")
+        self.assertEqual(status["active_window_end"], "2026-02-28")
+        self.assertEqual(status["archive_window_start"], latest["available_dates"][0])
+        self.assertEqual(status["archive_window_end"], latest["available_dates"][-1])
+
+    def test_explicit_refresh_status_window_matches_requested_range(self) -> None:
+        self._insert_seed_data()
+        export_feed(
+            self.conn,
+            out_dir=self.out_dir,
+            days=30,
+            today=date(2026, 2, 26),
+            lookahead_days=2,
+            raw_refresh_start=date(2026, 2, 25),
+            raw_refresh_end=date(2026, 2, 26),
+            export_cumulative=False,
+        )
+
+        status = _read_json(self.out_dir / "status.json")
+        self.assertEqual(status["window_start"], "2026-02-25")
+        self.assertEqual(status["window_end"], "2026-02-26")
+        self.assertEqual(status["active_window_start"], "2026-02-25")
+        self.assertEqual(status["active_window_end"], "2026-02-26")
+
     def test_export_includes_moki_totals_metadata_when_present(self) -> None:
         self._insert_seed_data()
         self.out_dir.mkdir(parents=True, exist_ok=True)

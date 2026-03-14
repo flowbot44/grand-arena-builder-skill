@@ -322,10 +322,16 @@ def export_feed(
         raw_refresh_end = raw_end
     if explicit_raw_refresh:
         active_raw_dates = [d.isoformat() for d in date_range(raw_refresh_start, raw_refresh_end)]
+        active_window_start_iso = raw_refresh_start.isoformat()
+        active_window_end_iso = raw_refresh_end.isoformat()
     elif raw_full_refresh:
         active_raw_dates = list(raw_calendar_dates)
+        active_window_start_iso = start.isoformat()
+        active_window_end_iso = raw_end.isoformat()
     else:
         active_raw_dates = [d.isoformat() for d in date_range(raw_mutable_start, raw_mutable_end)]
+        active_window_start_iso = raw_mutable_start.isoformat()
+        active_window_end_iso = raw_mutable_end.isoformat()
     manifest_raw_dates = sorted(set(prior_raw_by_date.keys()) | set(active_raw_dates))
 
     for day_iso in manifest_raw_dates:
@@ -406,13 +412,19 @@ def export_feed(
 
     cumulative_files_count = 0
     current_player_count = 0
+    archive_start = manifest_raw_dates[0] if manifest_raw_dates else start.isoformat()
+    archive_end = manifest_raw_dates[-1] if manifest_raw_dates else raw_end.isoformat()
     if not export_cumulative:
         status_payload = {
             "generated_at_utc": utc_now_iso(),
             "window_days": days,
             "lookahead_days": max(0, int(lookahead_days)),
-            "window_start": start.isoformat(),
-            "window_end": raw_end.isoformat(),
+            "window_start": active_window_start_iso,
+            "window_end": active_window_end_iso,
+            "active_window_start": active_window_start_iso,
+            "active_window_end": active_window_end_iso,
+            "archive_window_start": archive_start,
+            "archive_window_end": archive_end,
             "cumulative_window_end": today.isoformat(),
             "raw_dates": manifest_raw_dates,
             "latest_ingestion_run": dict(
@@ -594,10 +606,14 @@ def export_feed(
         "generated_at_utc": utc_now_iso(),
         "window_days": days,
         "lookahead_days": max(0, int(lookahead_days)),
-        "window_start": start.isoformat(),
-        "window_end": raw_end.isoformat(),
+        "window_start": active_window_start_iso,
+        "window_end": active_window_end_iso,
+        "active_window_start": active_window_start_iso,
+        "active_window_end": active_window_end_iso,
+        "archive_window_start": archive_start,
+        "archive_window_end": archive_end,
         "cumulative_window_end": today.isoformat(),
-        "raw_dates": raw_calendar_dates,
+        "raw_dates": manifest_raw_dates,
         "latest_ingestion_run": dict(latest_run) if latest_run else None,
     }
     _write_json(out_dir / "status.json", status_payload)
