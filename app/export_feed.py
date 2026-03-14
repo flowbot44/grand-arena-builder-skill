@@ -343,6 +343,9 @@ def export_feed(
         active_raw_dates = [d.isoformat() for d in date_range(raw_mutable_start, raw_mutable_end)]
         active_window_start_iso = raw_mutable_start.isoformat()
         active_window_end_iso = raw_mutable_end.isoformat()
+    # The partition files on disk are the archive source of truth.
+    # Each run only rewrites the active raw dates for that run, then rebuilds
+    # latest.json from whatever partition files actually exist on disk.
     existing_raw_dates = _existing_raw_partition_dates(partitions_dir)
     manifest_raw_dates = sorted(set(existing_raw_dates) | set(active_raw_dates))
 

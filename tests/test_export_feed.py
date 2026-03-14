@@ -326,6 +326,51 @@ class ExportFeedTests(unittest.TestCase):
         self.assertEqual(len(refreshed_new), 2)
         self.assertEqual(cumulative_before, cumulative_after)
 
+    def test_scheduled_style_refresh_leaves_non_active_partition_files_untouched(self) -> None:
+        self._insert_seed_data()
+        export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 2, 26))
+
+        untouched_path = self.out_dir / "partitions" / "raw_matches_2026-02-20.json.gz"
+        active_path = self.out_dir / "partitions" / "raw_matches_2026-02-25.json.gz"
+        untouched_before = untouched_path.read_bytes()
+        active_before = active_path.read_bytes()
+
+        self.conn.execute(
+            """
+            INSERT INTO matches (
+                match_id, game_type, match_date, state, is_bye, team_won, win_type, updated_at, last_seen_at
+            ) VALUES
+                ('m4', 'mokiMayhem', '2026-02-25', 'scheduled', 0, NULL, NULL, '2026-02-25T12:00:00Z', '2026-02-25T12:00:00Z')
+            """
+        )
+        self.conn.execute(
+            """
+            INSERT INTO match_players (
+                match_id, moki_id, token_id, team, name, class, image_url, is_champion
+            ) VALUES
+                ('m4', 'mk-666', 666, 1, 'Foxtrot', 'Center', '', 0),
+                ('m4', 'mk-777', 777, 2, 'Golf', 'Support', '', 0)
+            """
+        )
+        self.conn.commit()
+
+        export_feed(
+            self.conn,
+            out_dir=self.out_dir,
+            days=30,
+            today=date(2026, 2, 27),
+            lookahead_days=2,
+            mutable_days_back=2,
+            mutable_days_forward=2,
+            export_cumulative=False,
+        )
+
+        self.assertEqual(untouched_before, untouched_path.read_bytes())
+        self.assertNotEqual(active_before, active_path.read_bytes())
+        latest = _read_json(self.out_dir / "latest.json")
+        self.assertIn("2026-02-20", latest["available_dates"])
+        self.assertIn("2026-03-01", latest["available_dates"])
+
     def test_export_preserves_non_empty_old_partition_when_rebuild_is_empty(self) -> None:
         self._insert_seed_data()
         export_feed(self.conn, out_dir=self.out_dir, days=7, today=date(2026, 3, 1))

@@ -138,6 +138,35 @@ jobs:
             echo "Restore the previous grandarena-feed-state artifact before running manual recovery chunks."
             exit 1
           fi
+          python - <<'PY'
+          import json
+          from datetime import datetime, timedelta, timezone
+          from pathlib import Path
+
+          out_dir = Path("exports/data")
+          latest = json.loads((out_dir / "latest.json").read_text(encoding="utf-8"))
+          available_dates = set(latest.get("available_dates") or [])
+
+          today = datetime.now(timezone.utc).date()
+          required_dates = [(today + timedelta(days=offset)).isoformat() for offset in (-2, -1, 0, 1, 2)]
+          missing_dates = [day for day in required_dates if day not in available_dates]
+          if missing_dates:
+              raise SystemExit(
+                  "ERROR: Restored feed state is missing active scheduled window dates for recovery export: "
+                  f"{missing_dates}"
+              )
+
+          missing_files = []
+          for day in required_dates:
+              path = out_dir / "partitions" / f"raw_matches_{day}.json.gz"
+              if not path.exists():
+                  missing_files.append(str(path))
+          if missing_files:
+              raise SystemExit(
+                  "ERROR: Restored feed state is missing active scheduled window partition files for recovery export: "
+                  f"{missing_files}"
+              )
+          PY
 
       - name: Prune Rolling Window
         if: ${{ env.RECOVERY_FROM == '' }}

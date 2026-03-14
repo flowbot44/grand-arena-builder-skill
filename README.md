@@ -438,6 +438,7 @@ Publish behavior for raw partitions:
 - Published raw partition files are retained as archives and continue to accumulate over time.
 - Scheduled runs only refresh `today-2`, `today-1`, `today`, `today+1`, and `today+2`.
 - Manual recovery runs only refresh the requested recovery date range.
+- After each run, `latest.json` is rebuilt from the raw partition files that actually exist on disk; untouched archive files stay listed as long as their `.json.gz` files remain present.
 
 These files are designed for website/API consumers that need recent raw match/player/stats/performance data without reprocessing all days every run.
 
