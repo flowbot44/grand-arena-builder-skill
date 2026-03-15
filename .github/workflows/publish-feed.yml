@@ -74,7 +74,7 @@ jobs:
           workflow: publish-feed.yml
           workflow_conclusion: success
           name: grandarena-feed-state
-          path: exports
+          path: exports/data
           if_no_artifact_found: warn
 
       - name: Unpack DB State
@@ -117,6 +117,12 @@ jobs:
             FROM_DATE="$(date -u -d '2 days ago' +%F)"
             TO_DATE="$(date -u +%F)"
             python -m app.ingest backfill --db state/grandarena.db --from "$FROM_DATE" --to "$TO_DATE"
+          fi
+
+      - name: Snapshot Prior Feed Manifest
+        run: |
+          if [ -f exports/data/latest.json ]; then
+            cp exports/data/latest.json /tmp/prior_latest.json
           fi
 
       - name: Hourly Ingest
@@ -298,6 +304,18 @@ jobs:
           latest_run = status.get("latest_ingestion_run") or {}
           if latest_run and latest_run.get("status") not in {"success", "running"}:
               raise SystemExit(f"unexpected latest ingestion status: {latest_run.get('status')}")
+
+          prior_path = Path("/tmp/prior_latest.json")
+          if prior_path.exists():
+              prior = json.loads(prior_path.read_text(encoding="utf-8"))
+              prior_dates = set(prior.get("available_dates") or [])
+              current_dates = set(available_dates)
+              from datetime import timedelta
+              window_cutoff = (today - timedelta(days=30)).isoformat()
+              prior_in_window = {d for d in prior_dates if d >= window_cutoff}
+              dropped = prior_in_window - current_dates
+              if dropped:
+                  raise SystemExit(f"Archive dates dropped from manifest: {sorted(dropped)}")
 
           print("feed_window_validation=ok")
           PY
