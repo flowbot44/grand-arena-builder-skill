@@ -32,12 +32,12 @@ class FakeClient:
                         "matchDate": "2026-02-20",
                         "updatedAt": "2026-02-20T10:00:00.000Z",
                         "players": [
-                            {"mokiId": "a", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
-                            {"mokiId": "b", "team": 1, "name": "Non Champ", "tokenId": 1111, "class": "Support", "imageUrl": ""},
-                            {"mokiId": "c", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
-                            {"mokiId": "d", "team": 2, "name": "Non Champ 2", "tokenId": 2222, "class": "Flanker", "imageUrl": ""},
+                            {"mokiId": "a", "team": "red", "name": "Champ One", "mokiTokenId": 73, "class": "Center", "imageUrl": ""},
+                            {"mokiId": "b", "team": "red", "name": "Non Champ", "mokiTokenId": 1111, "class": "Support", "imageUrl": ""},
+                            {"mokiId": "c", "team": "blue", "name": "Champ Two", "mokiTokenId": 962, "class": "Grinder", "imageUrl": ""},
+                            {"mokiId": "d", "team": "blue", "name": "Non Champ 2", "mokiTokenId": 2222, "class": "Flanker", "imageUrl": ""},
                         ],
-                        "result": {"teamWon": 1, "winType": "eliminations"},
+                        "result": {"teamWon": "red", "winType": "eliminations"},
                     }
                 ],
                 "pagination": {"page": 1, "pages": 1},
@@ -52,10 +52,10 @@ class FakeClient:
                         "matchDate": "2026-02-21",
                         "updatedAt": "2026-02-21T10:00:00.000Z",
                         "players": [
-                            {"mokiId": "a2", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
-                            {"mokiId": "b2", "team": 1, "name": "Non Champ", "tokenId": 1111, "class": "Support", "imageUrl": ""},
-                            {"mokiId": "c2", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
-                            {"mokiId": "d2", "team": 2, "name": "Non Champ 2", "tokenId": 2222, "class": "Flanker", "imageUrl": ""},
+                            {"mokiId": "a2", "team": "red", "name": "Champ One", "mokiTokenId": 73, "class": "Center", "imageUrl": ""},
+                            {"mokiId": "b2", "team": "red", "name": "Non Champ", "mokiTokenId": 1111, "class": "Support", "imageUrl": ""},
+                            {"mokiId": "c2", "team": "blue", "name": "Champ Two", "mokiTokenId": 962, "class": "Grinder", "imageUrl": ""},
+                            {"mokiId": "d2", "team": "blue", "name": "Non Champ 2", "mokiTokenId": 2222, "class": "Flanker", "imageUrl": ""},
                         ],
                     }
                 ],
@@ -73,21 +73,21 @@ class FakeClient:
             "data": {
                 "matchId": "m1",
                 "state": "scored",
-                "teamWon": 1,
+                "teamWon": "red",
                 "winType": "eliminations",
                 "teams": [
                     {
                         "teamNumber": 1,
                         "players": [
-                            {"tokenId": 73, "team": 1, "won": True, "points": 14, "eliminations": 3, "deposits": 2, "wartDistance": 10},
-                            {"tokenId": 1111, "team": 1, "won": True, "points": 11, "eliminations": 1, "deposits": 4, "wartDistance": 0},
+                            {"mokiTokenId": 73, "team": "red", "won": True, "points": 14, "eliminations": 3, "deposits": 2, "wartDistance": 10},
+                            {"mokiTokenId": 1111, "team": "red", "won": True, "points": 11, "eliminations": 1, "deposits": 4, "wartDistance": 0},
                         ],
                     },
                     {
                         "teamNumber": 2,
                         "players": [
-                            {"tokenId": 962, "team": 2, "won": False, "points": 8, "eliminations": 1, "deposits": 1, "wartDistance": 5},
-                            {"tokenId": 2222, "team": 2, "won": False, "points": 7, "eliminations": 0, "deposits": 2, "wartDistance": 0},
+                            {"mokiTokenId": 962, "team": "blue", "won": False, "points": 8, "eliminations": 1, "deposits": 1, "wartDistance": 5},
+                            {"mokiTokenId": 2222, "team": "blue", "won": False, "points": 7, "eliminations": 0, "deposits": 2, "wartDistance": 0},
                         ],
                     },
                 ],
@@ -107,7 +107,7 @@ class FakeClient:
                         "id": "p1",
                         "matchId": "m1",
                         "mokiId": "a",
-                        "tokenId": 73,
+                        "mokiTokenId": 73,
                         "matchDate": "2026-02-20",
                         "isBye": False,
                         "updatedAt": "2026-02-20T10:01:00.000Z",
@@ -117,7 +117,7 @@ class FakeClient:
                         "id": "p2",
                         "matchId": "m1",
                         "mokiId": "b",
-                        "tokenId": 1111,
+                        "mokiTokenId": 1111,
                         "matchDate": "2026-02-20",
                         "isBye": False,
                         "updatedAt": "2026-02-20T10:01:00.000Z",
@@ -304,10 +304,10 @@ class BackfillAndUpcomingTests(unittest.TestCase):
                                 "matchDate": "2026-02-20",
                                 "updatedAt": "2026-02-20T13:00:00.000Z",
                                 "players": [
-                                    {"mokiId": "a3", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
-                                    {"mokiId": "b3", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                    {"mokiId": "a3", "team": "red", "name": "Champ One", "mokiTokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b3", "team": "blue", "name": "Champ Two", "mokiTokenId": 962, "class": "Grinder", "imageUrl": ""},
                                 ],
-                                "result": {"teamWon": 1, "winType": "eliminations"},
+                                "result": {"teamWon": "red", "winType": "eliminations"},
                             },
                             {
                                 "id": "m1",
@@ -317,10 +317,10 @@ class BackfillAndUpcomingTests(unittest.TestCase):
                                 "matchDate": "2026-02-20",
                                 "updatedAt": "2026-02-20T12:00:00.000Z",
                                 "players": [
-                                    {"mokiId": "a", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
-                                    {"mokiId": "b", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                    {"mokiId": "a", "team": "red", "name": "Champ One", "mokiTokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b", "team": "blue", "name": "Champ Two", "mokiTokenId": 962, "class": "Grinder", "imageUrl": ""},
                                 ],
-                                "result": {"teamWon": 1, "winType": "eliminations"},
+                                "result": {"teamWon": "red", "winType": "eliminations"},
                             },
                         ],
                         "pagination": {"page": 1, "pages": 3},
@@ -335,10 +335,10 @@ class BackfillAndUpcomingTests(unittest.TestCase):
                                 "matchDate": "2026-02-20",
                                 "updatedAt": "2026-02-20T11:00:00.000Z",
                                 "players": [
-                                    {"mokiId": "a4", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
-                                    {"mokiId": "b4", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                    {"mokiId": "a4", "team": "red", "name": "Champ One", "mokiTokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b4", "team": "blue", "name": "Champ Two", "mokiTokenId": 962, "class": "Grinder", "imageUrl": ""},
                                 ],
-                                "result": {"teamWon": 1, "winType": "eliminations"},
+                                "result": {"teamWon": "red", "winType": "eliminations"},
                             }
                         ],
                         "pagination": {"page": 2, "pages": 3},
@@ -398,10 +398,10 @@ class BackfillAndUpcomingTests(unittest.TestCase):
                                 "matchDate": "2026-02-20",
                                 "updatedAt": "2026-02-20T13:00:00.000Z",
                                 "players": [
-                                    {"mokiId": "a3", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
-                                    {"mokiId": "b3", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                    {"mokiId": "a3", "team": "red", "name": "Champ One", "mokiTokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b3", "team": "blue", "name": "Champ Two", "mokiTokenId": 962, "class": "Grinder", "imageUrl": ""},
                                 ],
-                                "result": {"teamWon": 1, "winType": "eliminations"},
+                                "result": {"teamWon": "red", "winType": "eliminations"},
                             }
                         ],
                         "pagination": {"page": 1, "pages": 2},
@@ -416,8 +416,8 @@ class BackfillAndUpcomingTests(unittest.TestCase):
                                 "matchDate": "2026-02-20",
                                 "updatedAt": "2026-02-20T11:00:00.000Z",
                                 "players": [
-                                    {"mokiId": "a4", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
-                                    {"mokiId": "b4", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                    {"mokiId": "a4", "team": "red", "name": "Champ One", "mokiTokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b4", "team": "blue", "name": "Champ Two", "mokiTokenId": 962, "class": "Grinder", "imageUrl": ""},
                                 ],
                             }
                         ],
@@ -475,10 +475,10 @@ class BackfillAndUpcomingTests(unittest.TestCase):
                                 "matchDate": "2026-02-20",
                                 "updatedAt": "2026-02-20T13:00:00.000Z",
                                 "players": [
-                                    {"mokiId": "a3", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
-                                    {"mokiId": "b3", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                    {"mokiId": "a3", "team": "red", "name": "Champ One", "mokiTokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b3", "team": "blue", "name": "Champ Two", "mokiTokenId": 962, "class": "Grinder", "imageUrl": ""},
                                 ],
-                                "result": {"teamWon": 1, "winType": "eliminations"},
+                                "result": {"teamWon": "red", "winType": "eliminations"},
                             }
                         ],
                         "pagination": {"page": 1, "pages": 2},
@@ -493,8 +493,8 @@ class BackfillAndUpcomingTests(unittest.TestCase):
                                 "matchDate": "2026-02-20",
                                 "updatedAt": "2026-02-20T11:00:00.000Z",
                                 "players": [
-                                    {"mokiId": "a4", "team": 1, "name": "Champ One", "tokenId": 73, "class": "Center", "imageUrl": ""},
-                                    {"mokiId": "b4", "team": 2, "name": "Champ Two", "tokenId": 962, "class": "Grinder", "imageUrl": ""},
+                                    {"mokiId": "a4", "team": "red", "name": "Champ One", "mokiTokenId": 73, "class": "Center", "imageUrl": ""},
+                                    {"mokiId": "b4", "team": "blue", "name": "Champ Two", "mokiTokenId": 962, "class": "Grinder", "imageUrl": ""},
                                 ],
                             }
                         ],

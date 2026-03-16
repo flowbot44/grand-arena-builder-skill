@@ -18,7 +18,7 @@ def _extract_total_stats(moki: Dict[str, Any]) -> Dict[str, Any]:
     stats = ((moki.get("gameStats") or {}).get("stats") or {})
     return {
         "mokiId": moki.get("id"),
-        "tokenId": moki.get("tokenId"),
+        "tokenId": moki.get("mokiTokenId"),
         "name": moki.get("name"),
         "class": (moki.get("gameStats") or {}).get("class"),
         "totals": {
@@ -44,7 +44,7 @@ def fetch_all_moki_totals(client: GrandArenaClient, *, page_limit: int = 100, bu
         page = int(pagination.get("page") or page)
 
         for row in data:
-            token_id = row.get("tokenId")
+            token_id = row.get("mokiTokenId")
             if token_id is None:
                 continue
             token_ids.append(int(token_id))

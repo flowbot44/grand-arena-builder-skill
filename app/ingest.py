@@ -9,6 +9,15 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List, Optional
 
 from .analytics import recompute_champion_metrics
+
+
+def _team_to_int(value: Any) -> Optional[int]:
+    """Normalize API team value to integer. Handles legacy numeric and new 'red'/'blue' strings."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return 1 if value == "red" else 2
+    return int(value)
 from .api_client import GrandArenaClient, RateLimiter
 from .config import SETTINGS
 from .db import get_connection, init_db, transaction
@@ -117,7 +126,7 @@ class IngestionService:
             rows = self.conn.execute("SELECT token_id FROM champions").fetchall()
             self._champion_token_ids = {int(r["token_id"]) for r in rows}
         for player in match.get("players", []):
-            token_id = player.get("tokenId")
+            token_id = player.get("mokiTokenId")
             if token_id is not None and int(token_id) in self._champion_token_ids:
                 return True
         return False
@@ -165,7 +174,7 @@ class IngestionService:
                     match.get("matchDate") or "",
                     current_state,
                     1 if match.get("isBye") else 0,
-                    result.get("teamWon"),
+                    _team_to_int(result.get("teamWon")),
                     result.get("winType"),
                     updated,
                     now,
@@ -179,7 +188,7 @@ class IngestionService:
             self.conn.execute("DELETE FROM match_players WHERE match_id = ?", (match["id"],))
             player_rows = []
             for player in match.get("players", []):
-                token_id = int(player.get("tokenId") or 0)
+                token_id = int(player.get("mokiTokenId") or 0)
                 if token_id == 0:
                     continue
                 player_rows.append(
@@ -187,7 +196,7 @@ class IngestionService:
                         match["id"],
                         player.get("mokiId") or "",
                         token_id,
-                        int(player.get("team") or 0),
+                        _team_to_int(player.get("team")) or 0,
                         player.get("name"),
                         player.get("class"),
                         player.get("imageUrl"),
@@ -286,7 +295,7 @@ class IngestionService:
         payload = self.client.get_match_stats(match_id)
         data = payload.get("data", {})
 
-        team_won = data.get("teamWon")
+        team_won = _team_to_int(data.get("teamWon"))
         win_type = data.get("winType")
         state = data.get("state")
         teams = data.get("teams") or []
@@ -300,14 +309,14 @@ class IngestionService:
             stat_rows = []
             for team in teams:
                 for player in team.get("players", []):
-                    token_id = player.get("tokenId")
+                    token_id = player.get("mokiTokenId")
                     if token_id is None:
                         continue
                     stat_rows.append(
                         (
                             match_id,
                             int(token_id),
-                            int(player.get("team") or team.get("teamNumber") or 0),
+                            _team_to_int(player.get("team")) or int(team.get("teamNumber") or 0),
                             1 if player.get("won") else 0,
                             player.get("points"),
                             player.get("eliminations"),
@@ -357,7 +366,7 @@ class IngestionService:
                             perf.get("id"),
                             perf.get("matchId") or match_id,
                             perf.get("mokiId") or "",
-                            perf.get("tokenId"),
+                            perf.get("mokiTokenId"),
                             perf.get("matchDate") or "",
                             1 if perf.get("isBye") else 0,
                             results.get("winType"),

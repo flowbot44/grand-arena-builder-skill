@@ -202,7 +202,7 @@ class GrandArenaClient:
             {
                 "page": page,
                 "limit": limit,
-                "sort": "tokenId",
+                "sort": "mokiTokenId",
                 "order": "asc",
             },
         )
