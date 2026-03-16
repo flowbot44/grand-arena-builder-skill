@@ -14,7 +14,7 @@ def _chunks(values: List[int], size: int) -> Iterable[List[int]]:
         yield values[idx : idx + size]
 
 
-def _extract_total_stats(moki: Dict[str, Any]) -> Dict[str, Any]:
+def _extract_total_stats(moki: Dict[str, Any], match_stats: Dict[str, Any]) -> Dict[str, Any]:
     stats = ((moki.get("gameStats") or {}).get("stats") or {})
     return {
         "mokiId": moki.get("id"),
@@ -27,6 +27,16 @@ def _extract_total_stats(moki: Dict[str, Any]) -> Dict[str, Any]:
             "defense": ((stats.get("defense") or {}).get("total")),
             "dexterity": ((stats.get("dexterity") or {}).get("total")),
             "fortitude": ((stats.get("fortitude") or {}).get("total")),
+        },
+        "matchStats": {
+            "matchCount": match_stats.get("matchCount"),
+            "wins": match_stats.get("wins"),
+            "losses": match_stats.get("losses"),
+            "winRate": match_stats.get("winRate"),
+            "avgDeposits": match_stats.get("avgDeposits"),
+            "avgEliminations": match_stats.get("avgEliminations"),
+            "avgWartDistance": match_stats.get("avgWartDistance"),
+            "winsByType": match_stats.get("winsByType"),
         },
     }
 
@@ -63,7 +73,11 @@ def fetch_all_moki_totals(client: GrandArenaClient, *, page_limit: int = 100, bu
     for chunk in _chunks(unique_token_ids, bulk_limit):
         payload = client.get_mokis_bulk(chunk)
         for moki in payload.get("data") or []:
-            results.append(_extract_total_stats(moki))
+            token_id = moki.get("mokiTokenId")
+            match_stats: Dict[str, Any] = {}
+            if token_id is not None:
+                match_stats = (client.get_moki_stats(int(token_id)).get("data") or {})
+            results.append(_extract_total_stats(moki, match_stats))
 
     results.sort(key=lambda row: (row.get("tokenId") is None, row.get("tokenId")))
     return results

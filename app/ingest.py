@@ -60,7 +60,6 @@ class IngestionService:
         self.client = client
         self.champions_path = champions_path
         self._champion_token_ids: set[int] = set()
-        self._force_full_refresh = False
 
     def _attach_api_telemetry(self, details: Dict[str, Any]) -> None:
         if hasattr(self.client, "telemetry_snapshot"):
@@ -130,6 +129,40 @@ class IngestionService:
             if token_id is not None and int(token_id) in self._champion_token_ids:
                 return True
         return False
+
+    def _date_fully_enriched(self, match_date: date) -> bool:
+        """True if the date has matches, none are still scheduled, and all have stats (+ performances if enabled)."""
+        date_iso = match_date.isoformat()
+        has_matches = self.conn.execute(
+            "SELECT 1 FROM matches WHERE match_date = ? LIMIT 1", (date_iso,)
+        ).fetchone()
+        if not has_matches:
+            return False
+        has_scheduled = self.conn.execute(
+            "SELECT 1 FROM matches WHERE match_date = ? AND state = 'scheduled' LIMIT 1", (date_iso,)
+        ).fetchone()
+        if has_scheduled:
+            return False
+        missing_stats = self.conn.execute(
+            """SELECT 1 FROM matches m
+               WHERE m.match_date = ?
+                 AND NOT EXISTS (SELECT 1 FROM match_stats_players s WHERE s.match_id = m.match_id)
+               LIMIT 1""",
+            (date_iso,),
+        ).fetchone()
+        if missing_stats:
+            return False
+        if SETTINGS.fetch_match_performances:
+            missing_perfs = self.conn.execute(
+                """SELECT 1 FROM matches m
+                   WHERE m.match_date = ?
+                     AND NOT EXISTS (SELECT 1 FROM performances p WHERE p.match_id = m.match_id)
+                   LIMIT 1""",
+                (date_iso,),
+            ).fetchone()
+            if missing_perfs:
+                return False
+        return True
 
     def _stats_present(self, match_id: str) -> bool:
         row = self.conn.execute("SELECT 1 FROM match_stats_players WHERE match_id = ? LIMIT 1", (match_id,)).fetchone()
@@ -230,23 +263,26 @@ class IngestionService:
         self.conn.commit()
 
     def sync_match_date(self, match_date: date) -> SyncResult:
+        today = utc_today()
+
+        if match_date < today and self._date_fully_enriched(match_date):
+            return SyncResult()
+
+        state_filter = "scheduled" if match_date > today else None
+
         result = SyncResult()
         enrich_ids: set[str] = set()
-        cursor_key = f"matches:{match_date.isoformat()}"
-        use_cursor_cutoff = (match_date < utc_today()) and not self._force_full_refresh
-        previous_cursor = self._load_cursor(cursor_key) if use_cursor_cutoff else ""
-        max_updated_at = previous_cursor
         today_iso = utc_now_iso()
 
         page = 1
         pages = 1
-        stop_paging = False
         while page <= pages:
             payload = self.client.list_matches(
                 match_date.isoformat(),
                 page=page,
                 limit=SETTINGS.api_page_limit,
                 order="desc",
+                state=state_filter,
             )
             items = payload.get("data", [])
             pagination = payload.get("pagination", {})
@@ -254,11 +290,6 @@ class IngestionService:
             page = int(pagination.get("page") or page)
 
             for match in items:
-                source_updated = match.get("updatedAt") or ""
-                if use_cursor_cutoff and previous_cursor and source_updated and source_updated < previous_cursor:
-                    stop_paging = True
-                    break
-
                 result.matches_seen += 1
                 if SETTINGS.champion_only_matches and not self._match_includes_champion(match):
                     continue
@@ -266,17 +297,12 @@ class IngestionService:
                 if changed:
                     result.matches_updated += 1
 
-                if source_updated > max_updated_at:
-                    max_updated_at = source_updated
-
                 state = match.get("state")
                 if state == "scored":
                     match_id = match["id"]
-                    if changed or not self._stats_present(match_id) or not self._performances_present(match_id):
+                    if not self._stats_present(match_id) or not self._performances_present(match_id):
                         enrich_ids.add(match_id)
 
-            if stop_paging:
-                break
             page += 1
 
         for match_id in enrich_ids:
@@ -288,7 +314,6 @@ class IngestionService:
             result.perf_upserts += perf_upserted
 
         result.enrich_candidates = len(enrich_ids)
-        self._store_cursor(cursor_key, max_updated_at)
         return result
 
     def enrich_match_stats(self, match_id: str) -> int:
@@ -408,7 +433,6 @@ class IngestionService:
         start: date,
         end: date,
         *,
-        force_full_refresh: bool = False,
         recompute_metrics_at_end: bool = True,
     ) -> Dict[str, Any]:
         started_at = utc_now_iso()
@@ -428,7 +452,6 @@ class IngestionService:
         should_recompute_metrics = False
 
         try:
-            self._force_full_refresh = force_full_refresh
             for day in date_range(start, end):
                 day_result = self.sync_match_date(day)
                 details["by_date"][day.isoformat()] = day_result.__dict__
@@ -461,8 +484,6 @@ class IngestionService:
             )
             self.conn.commit()
             raise
-        finally:
-            self._force_full_refresh = False
 
     def run_enrichment_only(
         self,
@@ -573,7 +594,7 @@ def run_backfill(
     conn = get_connection(db_path)
     init_db(conn)
     service = IngestionService(conn, build_client(), champions_path=champions_path)
-    return service.run_date_range(start, end, force_full_refresh=True, recompute_metrics_at_end=recompute_metrics_at_end)
+    return service.run_date_range(start, end, recompute_metrics_at_end=recompute_metrics_at_end)
 
 
 def run_hourly(db_path: str, today: date, champions_path: str) -> Dict[str, Any]:

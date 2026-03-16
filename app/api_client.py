@@ -135,9 +135,11 @@ class GrandArenaClient:
             started = time.monotonic()
             try:
                 with urlopen(req, timeout=self.timeout_seconds) as resp:
-                    raw = resp.read().decode("utf-8", errors="replace")
                     self.telemetry.request_seconds += max(0.0, time.monotonic() - started)
                     self.telemetry.successes += 1
+                    if resp.status == 202:
+                        return {}
+                    raw = resp.read().decode("utf-8", errors="replace")
                     return json.loads(raw)
             except HTTPError as exc:
                 self.telemetry.request_seconds += max(0.0, time.monotonic() - started)
@@ -183,7 +185,7 @@ class GrandArenaClient:
     def telemetry_snapshot(self) -> Dict[str, Any]:
         return self.telemetry.as_dict()
 
-    def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "desc") -> Dict[str, Any]:
+    def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "desc", state: Optional[str] = None) -> Dict[str, Any]:
         return self._request_json(
             "/api/v1/matches",
             {
@@ -191,8 +193,9 @@ class GrandArenaClient:
                 "limit": limit,
                 "gameType": "mokiMayhem",
                 "matchDate": match_date,
-                "sort": "updatedAt",
+                "sort": "matchDate",
                 "order": order,
+                "state": state,
             },
         )
 
@@ -212,6 +215,9 @@ class GrandArenaClient:
             return {"data": []}
         ids_csv = ",".join(str(token_id) for token_id in token_ids)
         return self._request_json("/api/v1/mokis/bulk", {"ids": ids_csv})
+
+    def get_moki_stats(self, moki_token_id: int) -> Dict[str, Any]:
+        return self._request_json(f"/api/v1/mokis/{moki_token_id}/stats")
 
     def get_match_stats(self, match_id: str) -> Dict[str, Any]:
         return self._request_json(f"/api/v1/matches/{match_id}/stats")
