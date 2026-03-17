@@ -267,23 +267,82 @@ class IngestionService:
         )
         self.conn.commit()
 
+    def _load_enriched_sets(self, date_iso: str) -> tuple:
+        """Return (stats_ids, perfs_ids) — sets of match_ids that already have stats/performances for this date."""
+        stats_ids = {
+            r[0]
+            for r in self.conn.execute(
+                "SELECT DISTINCT s.match_id FROM match_stats_players s"
+                " JOIN matches m ON m.match_id = s.match_id WHERE m.match_date = ?",
+                (date_iso,),
+            )
+        }
+        if SETTINGS.fetch_match_performances:
+            perfs_ids = {
+                r[0]
+                for r in self.conn.execute(
+                    "SELECT DISTINCT p.match_id FROM performances p"
+                    " JOIN matches m ON m.match_id = p.match_id WHERE m.match_date = ?",
+                    (date_iso,),
+                )
+            }
+        else:
+            perfs_ids = stats_ids
+        return stats_ids, perfs_ids
+
     def sync_match_date(self, match_date: date) -> SyncResult:
         today = utc_today()
 
         if match_date < today and self._date_fully_enriched(match_date):
             return SyncResult()
 
+        date_iso = match_date.isoformat()
         state_filter = "scheduled" if match_date > today else None
 
         result = SyncResult()
-        enrich_ids: set[str] = set()
         today_iso = utc_now_iso()
+
+        # Pre-load which match_ids for this date already have stats/performances.
+        # Avoids one SELECT per scored match during the listing loop.
+        existing_stats, existing_perfs = self._load_enriched_sets(date_iso)
+        enrich_ids: set[str] = set()
+
+        # For past dates, enrich DB-known scored matches before listing.
+        # If the date becomes fully enriched, we can skip the listing API calls entirely.
+        if match_date < today:
+            db_scored_ids = {
+                r[0]
+                for r in self.conn.execute(
+                    "SELECT match_id FROM matches WHERE match_date = ? AND state = 'scored'",
+                    (date_iso,),
+                )
+            }
+            pre_enrich_ids = {
+                mid for mid in db_scored_ids
+                if mid not in existing_stats or mid not in existing_perfs
+            }
+            if pre_enrich_ids:
+                def _pre_enrich(mid: str) -> tuple:
+                    s = self.enrich_match_stats(mid)
+                    p = self.enrich_match_performances(mid) if SETTINGS.fetch_match_performances else 0
+                    return s, p
+
+                workers = min(SETTINGS.ingest_workers, len(pre_enrich_ids))
+                with ThreadPoolExecutor(max_workers=workers) as pool:
+                    for s, p in pool.map(_pre_enrich, pre_enrich_ids):
+                        result.stats_upserts += s
+                        result.perf_upserts += p
+                result.enrich_candidates += len(pre_enrich_ids)
+                existing_stats, existing_perfs = self._load_enriched_sets(date_iso)
+
+            if self._date_fully_enriched(match_date):
+                return result
 
         page = 1
         pages = 1
         while page <= pages:
             payload = self.client.list_matches(
-                match_date.isoformat(),
+                date_iso,
                 page=page,
                 limit=SETTINGS.api_page_limit,
                 order="desc",
@@ -305,7 +364,7 @@ class IngestionService:
                 state = match.get("state")
                 if state == "scored":
                     match_id = match["id"]
-                    if not self._stats_present(match_id) or not self._performances_present(match_id):
+                    if match_id not in existing_stats or match_id not in existing_perfs:
                         enrich_ids.add(match_id)
 
             page += 1

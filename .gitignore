@@ -26,6 +26,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Hypothesis (property-based testing cache)
+.hypothesis/
+
 # Build and test outputs
 dist/
 build/
