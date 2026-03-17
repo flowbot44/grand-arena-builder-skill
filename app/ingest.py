@@ -4,6 +4,8 @@ import argparse
 import hashlib
 import json
 import sqlite3
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List, Optional
@@ -60,6 +62,7 @@ class IngestionService:
         self.client = client
         self.champions_path = champions_path
         self._champion_token_ids: set[int] = set()
+        self._db_lock = threading.Lock()
 
     def _attach_api_telemetry(self, details: Dict[str, Any]) -> None:
         if hasattr(self.client, "telemetry_snapshot"):
@@ -307,13 +310,17 @@ class IngestionService:
 
             page += 1
 
-        for match_id in enrich_ids:
-            stats_upserted = self.enrich_match_stats(match_id)
-            perf_upserted = 0
-            if SETTINGS.fetch_match_performances:
-                perf_upserted = self.enrich_match_performances(match_id)
-            result.stats_upserts += stats_upserted
-            result.perf_upserts += perf_upserted
+        def _enrich_one(match_id: str) -> tuple:
+            s = self.enrich_match_stats(match_id)
+            p = self.enrich_match_performances(match_id) if SETTINGS.fetch_match_performances else 0
+            return s, p
+
+        if enrich_ids:
+            workers = min(SETTINGS.ingest_workers, len(enrich_ids))
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                for stats_upserted, perf_upserted in pool.map(_enrich_one, enrich_ids):
+                    result.stats_upserts += stats_upserted
+                    result.perf_upserts += perf_upserted
 
         result.enrich_candidates = len(enrich_ids)
         return result
@@ -328,7 +335,7 @@ class IngestionService:
         state = data.get("state")
         teams = data.get("teams") or []
         upserts = 0
-        with transaction(self.conn):
+        with self._db_lock, transaction(self.conn):
             if state:
                 self.conn.execute(
                     "UPDATE matches SET state = ?, team_won = ?, win_type = ?, scoring_method = COALESCE(?, scoring_method) WHERE match_id = ?",
@@ -385,7 +392,7 @@ class IngestionService:
             pages = int(pagination.get("pages") or 1)
             page = int(pagination.get("page") or page)
 
-            with transaction(self.conn):
+            with self._db_lock, transaction(self.conn):
                 perf_rows = []
                 for perf in performances:
                     results = perf.get("results") or {}

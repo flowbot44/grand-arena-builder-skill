@@ -25,6 +25,7 @@ class Settings:
     api_timeout_seconds: int = int(os.getenv("GRANDARENA_API_TIMEOUT_SECONDS", "30"))
     api_retries: int = int(os.getenv("GRANDARENA_API_RETRIES", "6"))
     api_page_limit: int = int(os.getenv("API_PAGE_LIMIT", "100"))
+    ingest_workers: int = int(os.getenv("INGEST_WORKERS", "8"))
     champion_only_matches: bool = _env_bool("CHAMPION_ONLY_MATCHES", True)
     fetch_match_performances: bool = _env_bool("FETCH_MATCH_PERFORMANCES", True)
     backfill_start_default: date = date(2026, 2, 19)

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional
 
 from .api_client import GrandArenaClient, RateLimiter
 from .config import SETTINGS
@@ -69,15 +70,23 @@ def fetch_all_moki_totals(client: GrandArenaClient, *, page_limit: int = 100, bu
         seen.add(token_id)
         unique_token_ids.append(token_id)
 
-    results: List[Dict[str, Any]] = []
+    moki_list: List[tuple] = []
     for chunk in _chunks(unique_token_ids, bulk_limit):
         payload = client.get_mokis_bulk(chunk)
         for moki in payload.get("data") or []:
             token_id = moki.get("mokiTokenId")
-            match_stats: Dict[str, Any] = {}
-            if token_id is not None:
-                match_stats = (client.get_moki_stats(int(token_id)).get("data") or {})
-            results.append(_extract_total_stats(moki, match_stats))
+            moki_list.append((moki, int(token_id) if token_id is not None else None))
+
+    def _fetch_stats(token_id: Optional[int]) -> Dict[str, Any]:
+        if token_id is None:
+            return {}
+        return client.get_moki_stats(token_id).get("data") or {}
+
+    workers = min(SETTINGS.ingest_workers, len(moki_list)) if moki_list else 1
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        stats_list = list(pool.map(_fetch_stats, [tid for _, tid in moki_list]))
+
+    results = [_extract_total_stats(moki, stats) for (moki, _), stats in zip(moki_list, stats_list)]
 
     results.sort(key=lambda row: (row.get("tokenId") is None, row.get("tokenId")))
     return results

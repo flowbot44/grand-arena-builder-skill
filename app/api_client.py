@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 import time
 from collections import deque
 from dataclasses import dataclass
@@ -56,6 +57,7 @@ class RateLimiter:
         self._request_times: deque[float] = deque()
         self._last_request_at: Optional[float] = None
         self.total_sleep_seconds: float = 0.0
+        self._lock: threading.Lock = threading.Lock()
 
     def _sleep(self, seconds: float) -> None:
         if seconds <= 0:
@@ -64,27 +66,28 @@ class RateLimiter:
         self.sleep_fn(seconds)
 
     def wait(self) -> None:
-        now = self.now_fn()
+        with self._lock:
+            now = self.now_fn()
 
-        if self._last_request_at is not None:
-            elapsed = now - self._last_request_at
-            if elapsed < self.min_interval_seconds:
-                self._sleep(self.min_interval_seconds - elapsed)
-                now = self.now_fn()
+            if self._last_request_at is not None:
+                elapsed = now - self._last_request_at
+                if elapsed < self.min_interval_seconds:
+                    self._sleep(self.min_interval_seconds - elapsed)
+                    now = self.now_fn()
 
-        while self._request_times and now - self._request_times[0] >= 60.0:
-            self._request_times.popleft()
-
-        if len(self._request_times) >= self.max_per_minute:
-            wait_for = 60.0 - (now - self._request_times[0])
-            if wait_for > 0:
-                self._sleep(wait_for)
-                now = self.now_fn()
             while self._request_times and now - self._request_times[0] >= 60.0:
                 self._request_times.popleft()
 
-        self._request_times.append(now)
-        self._last_request_at = now
+            if len(self._request_times) >= self.max_per_minute:
+                wait_for = 60.0 - (now - self._request_times[0])
+                if wait_for > 0:
+                    self._sleep(wait_for)
+                    now = self.now_fn()
+                while self._request_times and now - self._request_times[0] >= 60.0:
+                    self._request_times.popleft()
+
+            self._request_times.append(now)
+            self._last_request_at = now
 
 
 class GrandArenaClient:
