@@ -41,6 +41,7 @@ def init_db(conn: sqlite3.Connection) -> None:
             is_bye INTEGER NOT NULL,
             team_won INTEGER,
             win_type TEXT,
+            scoring_method TEXT,
             updated_at TEXT NOT NULL,
             last_seen_at TEXT NOT NULL
         );
@@ -118,4 +119,8 @@ def init_db(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_matches_updated_at ON matches(updated_at);
         """
     )
+    try:
+        conn.execute("ALTER TABLE matches ADD COLUMN scoring_method TEXT")
+    except Exception:
+        pass  # column already exists
     conn.commit()

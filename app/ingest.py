@@ -187,8 +187,8 @@ class IngestionService:
                 """
                 INSERT INTO matches (
                     match_id, game_type, match_date, state, is_bye,
-                    team_won, win_type, updated_at, last_seen_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    team_won, win_type, scoring_method, updated_at, last_seen_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(match_id) DO UPDATE SET
                     game_type = excluded.game_type,
                     match_date = excluded.match_date,
@@ -196,10 +196,11 @@ class IngestionService:
                     is_bye = excluded.is_bye,
                     team_won = excluded.team_won,
                     win_type = excluded.win_type,
+                    scoring_method = excluded.scoring_method,
                     updated_at = excluded.updated_at,
                     last_seen_at = excluded.last_seen_at
                 WHERE matches.state != excluded.state
-                   OR matches.updated_at != excluded.updated_at
+                   OR matches.scoring_method IS NOT excluded.scoring_method
                 """,
                 (
                     match["id"],
@@ -209,6 +210,7 @@ class IngestionService:
                     1 if match.get("isBye") else 0,
                     _team_to_int(result.get("teamWon")),
                     result.get("winType"),
+                    match.get("scoringMethod"),
                     updated,
                     now,
                 ),
@@ -322,14 +324,15 @@ class IngestionService:
 
         team_won = _team_to_int(data.get("teamWon"))
         win_type = data.get("winType")
+        scoring_method = data.get("scoringMethod")
         state = data.get("state")
         teams = data.get("teams") or []
         upserts = 0
         with transaction(self.conn):
             if state:
                 self.conn.execute(
-                    "UPDATE matches SET state = ?, team_won = ?, win_type = ? WHERE match_id = ?",
-                    (state, team_won, win_type, match_id),
+                    "UPDATE matches SET state = ?, team_won = ?, win_type = ?, scoring_method = COALESCE(?, scoring_method) WHERE match_id = ?",
+                    (state, team_won, win_type, scoring_method, match_id),
                 )
             stat_rows = []
             for team in teams:

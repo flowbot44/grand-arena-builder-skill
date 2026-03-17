@@ -150,6 +150,22 @@ This repo now includes a local data platform in `app/`:
 - `python -m app.ingest enrich-only`: only enrich already stored scored matches missing stats/perfs.
 - `python -m app.serve`: local Flask website/API for champion matchup edges.
 
+### API compatibility
+
+The ingest layer targets **Grand Arena API v2.0.0**. Key differences from v1:
+
+- `tokenId` renamed to `mokiTokenId`, `cardId` renamed to `cardTokenId` in all response bodies and path/query params.
+- `team` and `teamWon` changed from numeric (`1`/`2`) to string (`"red"`/`"blue"`); normalized to integers at ingest time (`red=1`, `blue=2`).
+- `matchGroup` query param replaced by `matchDate` (YYYY-MM-DD).
+- `owner` field/param removed; use `ownerAddress`.
+- `GET /api/v1/matches` and `GET /api/v1/performances` now require a narrowing filter (`matchDate` or `mokiId`); returns 400 if only broad filters are provided.
+- `GET /api/v1/matches/{id}/stats` returns HTTP 202 (not an error) when the match is not yet scored — handled gracefully by returning an empty payload.
+- `GET /api/v1/leaderboards/active` response changed from flat array to `{ data, pagination }`.
+- Boolean query params (`isBye`, `minted`, etc.) now require `"true"`/`"false"` strings.
+- `GET /api/v1/matches` allowed `sort` values: `matchDate`, `state` (no longer `updatedAt`).
+- `scoringMethod` field added to match responses; new value: `s1_v4`.
+- Scores endpoint field renames: `nftAiId` → `mokiId`, `kills` → `eliminations`, `ballsScored` → `deposits`, `wortDistance` → `wartDistance`.
+
 ### Runtime assumptions
 
 - Current tuned workflow pacing: `720 req/min` with `0.10s` minimum interval.
@@ -180,6 +196,14 @@ Efficiency toggles:
 - `CHAMPION_ONLY_MATCHES=true` (default): only store/enrich matches that include at least one token from `champions.json`.
 - `CHAMPION_ONLY_MATCHES=false`: fetch, store, and export all matches in the ingest window, including matches with no champion in them. In plain terms, this is the non-champion-inclusive mode.
 - `FETCH_MATCH_PERFORMANCES=false`: skip `/matches/{id}/performances` enrichment and use stats-only enrichment for lower API usage.
+
+Sync behaviour notes:
+
+- Scored matches are treated as final — once a match has stats and performances stored, it is never re-fetched or re-enriched.
+- Past dates that are fully enriched (all matches scored, all have stats/performances) are skipped entirely on subsequent runs, cutting API calls significantly on repeated hourly runs and backfills.
+- Future dates (`match_date > today`) are fetched with `state=scheduled` filter, since no scored matches can exist there yet.
+- `GET /api/v1/matches/{id}/stats` returning HTTP 202 (match not yet scored) is handled gracefully — no stats are written and the match remains eligible for enrichment on the next run.
+- The `force_full_refresh` flag and per-date `updatedAt` cursor have been removed; they relied on `updatedAt` ordering which is no longer available in the API.
 
 Workflow note:
 
@@ -329,12 +353,12 @@ Database file:
 Tables:
 
 - `champions`: champion roster from `champions.json` (`token_id`, `name`, `traits_json`, `updated_at`).
-- `matches`: match-level metadata and state (`match_id`, `match_date`, `state`, `team_won`, `win_type`, timestamps).
+- `matches`: match-level metadata and state (`match_id`, `match_date`, `state`, `team_won`, `win_type`, `scoring_method`, timestamps).
 - `match_players`: players per match (`token_id`, `moki_id`, `team`, `class`, `is_champion`).
 - `match_stats_players`: per-match stats payload rows (`points`, `deposits`, `eliminations`, `wart_distance`, `won`).
 - `performances`: per-performance rows from `/matches/{id}/performances`.
 - `ingestion_runs`: run history and run details JSON.
-- `api_cursors`: per-date watermarks/cursors used by ingest.
+- `api_cursors`: key/value store used by ingest (currently used for `champions.json` content hash; match-date cursors removed in API v2 migration).
 - `champion_metrics`: recomputed champion summary metrics for website queries.
 
 Notes:
@@ -355,7 +379,7 @@ Expected public URLs (replace `<user>`/`<repo>`):
 - `https://<user>.github.io/<repo>/data/cumulative/latest.json`
 - `https://<user>.github.io/<repo>/data/cumulative/current_totals.json.gz`
 - `https://<user>.github.io/<repo>/data/cumulative/daily_totals_YYYY-MM-DD.json.gz`
-- `https://<user>.github.io/<repo>/data/moki_totals.json`
+- `https://<user>.github.io/<repo>/data/moki_totals.json` — per-moki game stats totals and match performance summary
 
 ### Scheduled publish flow
 
@@ -368,7 +392,7 @@ Workflow file: `.github/workflows/publish-feed.yml`
 - Runs:
   - `python -m app.ingest hourly --db state/grandarena.db`
   - `python -m app.maintenance prune --db state/grandarena.db --keep-days 5`
-  - `python -m app.export_moki_totals --out exports/data/moki_totals.json`
+  - `python -m app.export_moki_totals --out exports/data/moki_totals.json` — fetches all mokis via `/api/v1/mokis` + `/api/v1/mokis/bulk`, then calls `/api/v1/mokis/{mokiTokenId}/stats` per moki to include `matchCount`, `wins`, `losses`, `winRate`, `avgDeposits`, `avgEliminations`, `avgWartDistance`, `winsByType`
   - `python -m app.export_feed --db state/grandarena.db --out exports/data --days 30 --lookahead-days 2 --mutable-days-back 2 --mutable-days-forward 2 --cumulative-mutable-days-back 2`
 - Current tuned workflow values:
   - `REQUEST_LIMIT_PER_MINUTE=720`

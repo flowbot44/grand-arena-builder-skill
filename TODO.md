@@ -8,4 +8,9 @@
 - [x] Batch `match_players`, `match_stats_players`, and `performances` writes with `executemany()`.
 - [x] Reduce per-match read-before-write work in `_upsert_match()` further, likely with a more selective upsert strategy.
 - [x] Precompute lightweight support win-rate aggregates for feed lookahead instead of scanning all scored partitions per request.
+- [x] Migrate ingest layer to Grand Arena API v2 (`mokiTokenId`, `team`/`teamWon` strings, `matchDate` sort, 202 handling, `scoringMethod`).
+- [x] Remove `updatedAt`-based cursor and `force_full_refresh` — API no longer returns `updatedAt` on matches.
+- [x] Skip re-fetching fully-enriched past dates; use `state=scheduled` filter for future dates.
+- [x] Integrate `/api/v1/mokis/{mokiTokenId}/stats` into `export_moki_totals` output.
+- [x] Add `scoring_method` column to `matches` table (with `ALTER TABLE` migration for existing DBs).
 - [ ] Revisit `recompute_champion_metrics()` if DB growth resumes; current rebuild is acceptable for the trimmed DB window but still full-refresh.
