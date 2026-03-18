@@ -30,6 +30,27 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _parse_match_date(value: str) -> str:
+    """Normalize a matchDate from the API to a plain UTC date string (YYYY-MM-DD).
+
+    The API may return a bare date ("2026-03-17"), a UTC datetime
+    ("2026-03-17T00:30:00.000Z"), or an offset datetime
+    ("2026-03-16T23:30:00-08:00").  We always want the UTC calendar date so
+    that DB queries using date strings are consistent.
+    """
+    if not value:
+        return ""
+    if "T" in value or (len(value) > 10 and (" " in value or "+" in value[10:])):
+        try:
+            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            return dt.astimezone(timezone.utc).date().isoformat()
+        except ValueError:
+            pass
+    # Already a plain date string ("2026-03-17") — take exactly 10 chars in
+    # case there is unexpected trailing content.
+    return value[:10]
+
+
 def parse_date(value: str) -> date:
     return date.fromisoformat(value)
 
@@ -208,7 +229,7 @@ class IngestionService:
                 (
                     match["id"],
                     match.get("gameType", "mokiMayhem"),
-                    match.get("matchDate") or "",
+                    _parse_match_date(match.get("matchDate") or ""),
                     current_state,
                     1 if match.get("isBye") else 0,
                     _team_to_int(result.get("teamWon")),
@@ -461,7 +482,7 @@ class IngestionService:
                             perf.get("matchId") or match_id,
                             perf.get("mokiId") or "",
                             perf.get("mokiTokenId"),
-                            perf.get("matchDate") or "",
+                            _parse_match_date(perf.get("matchDate") or ""),
                             1 if perf.get("isBye") else 0,
                             results.get("winType"),
                             results.get("deposits"),
