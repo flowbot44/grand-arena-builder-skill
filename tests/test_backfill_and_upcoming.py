@@ -62,7 +62,7 @@ class FakeClient:
             },
         }
 
-    def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "desc"):
+    def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "asc", sort: str = "id", state=None):
         return self.matches_by_date.get(match_date, {"data": [], "pagination": {"page": 1, "pages": 1}})
 
     def get_match_stats(self, match_id: str):
@@ -287,7 +287,7 @@ class BackfillAndUpcomingTests(unittest.TestCase):
         self.assertEqual(upcoming["player"]["token_id"], 1111)
         self.assertTrue(upcoming["insufficient_upcoming"])
 
-    def test_sync_match_date_uses_desc_order_and_fetches_all_pages(self) -> None:
+    def test_sync_match_date_uses_asc_order_and_fetches_all_pages(self) -> None:
         class CursorClient(FakeClient):
             def __init__(self) -> None:
                 super().__init__()
@@ -348,7 +348,7 @@ class BackfillAndUpcomingTests(unittest.TestCase):
                     },
                 }
 
-            def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "desc"):
+            def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "asc", sort: str = "id", state=None):
                 self.calls.append((match_date, page, limit, order))
                 return self.pages[(match_date, page)]
 
@@ -376,7 +376,7 @@ class BackfillAndUpcomingTests(unittest.TestCase):
 
         result = service.sync_match_date(date(2026, 2, 20))
 
-        self.assertEqual(client.calls[0][3], "desc")
+        self.assertEqual(client.calls[0][3], "asc")
         self.assertEqual(len(client.calls), 3)
         self.assertEqual(result.matches_seen, 3)
         self.assertEqual(result.matches_updated, 3)

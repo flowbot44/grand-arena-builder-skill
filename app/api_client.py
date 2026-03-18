@@ -188,7 +188,7 @@ class GrandArenaClient:
     def telemetry_snapshot(self) -> Dict[str, Any]:
         return self.telemetry.as_dict()
 
-    def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "desc", state: Optional[str] = None) -> Dict[str, Any]:
+    def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "asc", sort: str = "id", state: Optional[str] = None) -> Dict[str, Any]:
         return self._request_json(
             "/api/v1/matches",
             {
@@ -196,7 +196,7 @@ class GrandArenaClient:
                 "limit": limit,
                 "gameType": "mokiMayhem",
                 "matchDate": match_date,
-                "sort": "matchDate",
+                "sort": sort,
                 "order": order,
                 "state": state,
             },
