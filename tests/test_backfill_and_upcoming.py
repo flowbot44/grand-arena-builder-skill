@@ -62,7 +62,7 @@ class FakeClient:
             },
         }
 
-    def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "asc", sort: str = "id", state=None):
+    def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "asc", state=None):
         return self.matches_by_date.get(match_date, {"data": [], "pagination": {"page": 1, "pages": 1}})
 
     def get_match_stats(self, match_id: str):
@@ -348,7 +348,7 @@ class BackfillAndUpcomingTests(unittest.TestCase):
                     },
                 }
 
-            def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "asc", sort: str = "id", state=None):
+            def list_matches(self, match_date: str, page: int, limit: int = 100, order: str = "asc", state=None):
                 self.calls.append((match_date, page, limit, order))
                 return self.pages[(match_date, page)]
 

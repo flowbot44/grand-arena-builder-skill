@@ -65,7 +65,7 @@ class ApiClientRetryTests(unittest.TestCase):
             client.list_matches("2026-02-28", page=2, limit=50)
 
         self.assertIn("order=asc", captured["url"])
-        self.assertIn("sort=id", captured["url"])
+        self.assertIn("sort=matchDate", captured["url"])
 
 
 if __name__ == "__main__":

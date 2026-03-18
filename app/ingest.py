@@ -367,7 +367,6 @@ class IngestionService:
                 page=page,
                 limit=SETTINGS.api_page_limit,
                 order="asc",
-                sort="id",
                 state=state_filter,
             )
             items = payload.get("data", [])
