@@ -318,7 +318,16 @@ class IngestionService:
             return SyncResult()
 
         date_iso = match_date.isoformat()
-        state_filter = "scheduled" if match_date > today else None
+        # For future dates fetch only scheduled games (there are no scored ones yet).
+        # For today, the API may default to returning only scored games when no state
+        # filter is given, so we run two passes: one unfiltered (scored) and one
+        # explicitly for scheduled.  For past dates a single unfiltered call suffices.
+        if match_date > today:
+            state_filters: List[Optional[str]] = ["scheduled"]
+        elif match_date == today:
+            state_filters = [None, "scheduled"]
+        else:
+            state_filters = [None]
 
         result = SyncResult()
         today_iso = utc_now_iso()
@@ -359,36 +368,37 @@ class IngestionService:
             if self._date_fully_enriched(match_date):
                 return result
 
-        page = 1
-        pages = 1
-        while page <= pages:
-            payload = self.client.list_matches(
-                date_iso,
-                page=page,
-                limit=SETTINGS.api_page_limit,
-                order="asc",
-                state=state_filter,
-            )
-            items = payload.get("data", [])
-            pagination = payload.get("pagination", {})
-            pages = int(pagination.get("pages") or 1)
-            page = int(pagination.get("page") or page)
+        for state_filter in state_filters:
+            page = 1
+            pages = 1
+            while page <= pages:
+                payload = self.client.list_matches(
+                    date_iso,
+                    page=page,
+                    limit=SETTINGS.api_page_limit,
+                    order="asc",
+                    state=state_filter,
+                )
+                items = payload.get("data", [])
+                pagination = payload.get("pagination", {})
+                pages = int(pagination.get("pages") or 1)
+                page = int(pagination.get("page") or page)
 
-            for match in items:
-                result.matches_seen += 1
-                if SETTINGS.champion_only_matches and not self._match_includes_champion(match):
-                    continue
-                changed = self._upsert_match(match, now=today_iso)
-                if changed:
-                    result.matches_updated += 1
+                for match in items:
+                    result.matches_seen += 1
+                    if SETTINGS.champion_only_matches and not self._match_includes_champion(match):
+                        continue
+                    changed = self._upsert_match(match, now=today_iso)
+                    if changed:
+                        result.matches_updated += 1
 
-                state = match.get("state")
-                if state == "scored":
-                    match_id = match["id"]
-                    if match_id not in existing_stats or match_id not in existing_perfs:
-                        enrich_ids.add(match_id)
+                    state = match.get("state")
+                    if state == "scored":
+                        match_id = match["id"]
+                        if match_id not in existing_stats or match_id not in existing_perfs:
+                            enrich_ids.add(match_id)
 
-            page += 1
+                page += 1
 
         def _enrich_one(match_id: str) -> tuple:
             s = self.enrich_match_stats(match_id)
