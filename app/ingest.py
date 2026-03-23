@@ -318,14 +318,12 @@ class IngestionService:
             return SyncResult()
 
         date_iso = match_date.isoformat()
-        # For future dates fetch only scheduled games (there are no scored ones yet).
-        # For today, the API may default to returning only scored games when no state
-        # filter is given, so we run two passes: one unfiltered (scored) and one
-        # explicitly for scheduled.  For past dates a single unfiltered call suffices.
-        if match_date > today:
-            state_filters: List[Optional[str]] = ["scheduled"]
-        elif match_date == today:
-            state_filters = [None, "scheduled"]
+        # For today and future dates the API may not return all matches from a single
+        # filtered call, so we run two passes: one unfiltered (picks up scored/default
+        # results) and one explicitly for scheduled.  Past dates only need the
+        # unfiltered pass since all their games should already be scored.
+        if match_date >= today:
+            state_filters: List[Optional[str]] = [None, "scheduled"]
         else:
             state_filters = [None]
 

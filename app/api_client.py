@@ -168,7 +168,7 @@ class GrandArenaClient:
                     backoff *= 2.0
                     continue
                 raise ApiError(f"Timeout for {url}: {exc}") from exc
-            except URLError as exc:
+            except (URLError, ConnectionError) as exc:
                 self.telemetry.request_seconds += max(0.0, time.monotonic() - started)
                 self.telemetry.network_errors += 1
                 if attempt < self.retries:
